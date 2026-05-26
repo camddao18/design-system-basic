@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Vỡ lòng Tech</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f4f0;
+    --bg3: #eeecea;
+    --text: #1a1a18;
+    --text2: #5a5956;
+    --text3: #9b9894;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.18);
+    --info-bg: #e6f1fb;
+    --info-text: #185fa5;
+    --info-border: rgba(24,95,165,0.25);
+    --success-bg: #eaf3de;
+    --success-text: #3b6d11;
+    --success-border: rgba(59,109,17,0.25);
+    --warn-bg: #faeeda;
+    --warn-text: #854f0b;
+    --danger-bg: #fcebeb;
+    --danger-text: #a32d2d;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #242422;
+      --bg3: #2c2c2a;
+      --text: #e8e6e0;
+      --text2: #9b9894;
+      --text3: #6a6866;
+      --border: rgba(255,255,255,0.09);
+      --border2: rgba(255,255,255,0.15);
+      --info-bg: #0c2840;
+      --info-text: #85b7eb;
+      --info-border: rgba(133,183,235,0.2);
+      --success-bg: #172a08;
+      --success-text: #97c459;
+      --success-border: rgba(151,196,89,0.2);
+      --warn-bg: #241600;
+      --warn-text: #ef9f27;
+      --danger-bg: #2a0a0a;
+      --danger-text: #f09595;
+    }
+  }
+
+  html { font-size: 16px; }
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: var(--bg3);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  .site-header {
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+  .logo span { color: var(--text3); font-weight: 400; }
+  .header-tag { font-size: 11px; color: var(--text3); background: var(--bg2); padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--border); }
+
+  /* LAYOUT */
+  .container { max-width: 900px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  /* CHAPTER NAV */
+  .chapter-nav {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px;
+  }
+  .ch-btn {
+    padding: 7px 16px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Manrope', sans-serif;
+    cursor: pointer;
+    transition: all .18s;
+    white-space: nowrap;
+  }
+  .ch-btn:hover { background: var(--bg2); color: var(--text); }
+  .ch-btn.active { background: var(--text); color: var(--bg); }
+
+  /* CHAPTER PANELS */
+  .chapter-panel { display: none; }
+  .chapter-panel.active { display: block; }
+
+  .ch-header { margin-bottom: 20px; }
+  .ch-tag { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; }
+  .ch-title { font-size: 24px; font-weight: 600; color: var(--text); margin-top: 4px; letter-spacing: -0.02em; }
+  .ch-desc { font-size: 14px; color: var(--text2); margin-top: 8px; max-width: 620px; }
+
+  /* TOPIC GRID */
+  .topic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .topic-card {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .topic-card:hover { border-color: var(--border2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .topic-card.selected { border-color: var(--info-border); background: var(--info-bg); }
+  .tc-icon { font-size: 20px; margin-bottom: 8px; display: block; }
+  .tc-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .tc-short { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+  /* DETAIL PANEL */
+  .detail-panel {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    min-height: 220px;
+    animation: fadeIn .2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .detail-empty { color: var(--text3); font-size: 13px; text-align: center; padding: 40px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .detail-empty i { font-size: 28px; }
+  .detail-emoji { font-size: 28px; margin-bottom: 10px; display: block; }
+  .detail-title { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+  .detail-body { font-size: 14px; color: var(--text2); line-height: 1.8; margin-top: 10px; }
+  .detail-body strong { color: var(--text); font-weight: 600; }
+  .detail-body code { font-size: 12px; background: var(--bg2); padding: 1px 6px; border-radius: 4px; font-family: monospace; color: var(--info-text); }
+
+  /* TAGS */
+  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 14px 0; }
+  .tag { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 0.5px solid var(--border); color: var(--text2); background: var(--bg2); font-weight: 500; }
+  .tag.pro { border-color: var(--success-border); color: var(--success-text); background: var(--success-bg); }
+  .tag.con { border-color: rgba(163,45,45,0.25); color: var(--danger-text); background: var(--danger-bg); }
+  .tag.use { border-color: var(--info-border); color: var(--info-text); background: var(--info-bg); }
+
+  /* EXAMPLE BOX */
+  .example-box {
+    margin-top: 14px;
+    background: var(--bg2);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.75;
+  }
+  .example-box strong { color: var(--text); font-weight: 600; }
+
+  /* APPLY BOX */
+  .web-apply {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: var(--info-bg);
+    border: 0.5px solid var(--info-border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+  }
+  .web-apply-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--info-text); margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+  .web-apply-text { color: var(--info-text); line-height: 1.7; }
+
+  /* DIVIDER */
+  hr { border: none; border-top: 0.5px solid var(--border); margin: 18px 0; }
+
+  /* COMPARE GRID */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .cg-col { border-radius: var(--radius-sm); padding: 14px; }
+  .cg-col.sql { background: var(--info-bg); border: 0.5px solid var(--info-border); }
+  .cg-col.nosql { background: var(--success-bg); border: 0.5px solid var(--success-border); }
+  .cg-head { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+  .cg-col.sql .cg-head { color: var(--info-text); }
+  .cg-col.nosql .cg-head { color: var(--success-text); }
+  .cg-li { font-size: 12px; color: var(--text2); margin-bottom: 5px; padding-left: 12px; position: relative; line-height: 1.5; }
+  .cg-li::before { content: '—'; position: absolute; left: 0; color: var(--text3); font-size: 10px; top: 1px; }
+
+  /* NINES TABLE */
+  .nine-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+  .nine-table th { text-align: left; color: var(--text3); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; padding: 6px 10px; border-bottom: 0.5px solid var(--border); }
+  .nine-table td { padding: 8px 10px; border-bottom: 0.5px solid var(--border); color: var(--text2); }
+  .nine-table tr:last-child td { border-bottom: none; }
+  .avail-badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .avail-high { background: var(--success-bg); color: var(--success-text); }
+  .avail-med { background: var(--warn-bg); color: var(--warn-text); }
+
+  /* ARCH DIAGRAM */
+  .arch-diagram { margin-top: 14px; display: flex; flex-direction: column; gap: 0; }
+  .arch-row { display: flex; align-items: center; gap: 10px; }
+  .arch-block { background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius-sm); padding: 8px 16px; font-size: 13px; color: var(--text2); font-weight: 500; }
+  .arch-connector { display: flex; align-items: center; padding-left: 20px; }
+  .arch-connector-line { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .arch-vline { width: 0.5px; height: 14px; background: var(--border2); }
+  .arch-arrow-sym { color: var(--text3); font-size: 12px; }
+  .arch-connector-label { font-size: 11px; color: var(--text3); margin-left: 10px; }
+
+  /* INTRO OVERVIEW */
+  .overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+  .ov-card { background: var(--bg2); border-radius: var(--radius); padding: 16px; text-align: center; }
+  .ov-icon { font-size: 24px; margin-bottom: 8px; display: block; }
+  .ov-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .ov-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* FOOTER */
+  .site-footer { text-align: center; padding: 32px; font-size: 12px; color: var(--text3); border-top: 0.5px solid var(--border); margin-top: 40px; }
+
+  /* SHARED TOP NAV */
+  .top-nav {
+    background: var(--bg);
+    border-bottom: 0.5px solid var(--border2);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 40px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+  .top-nav-brand {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    margin-right: 8px;
+  }
+  .top-nav-divider {
+    width: 0.5px;
+    height: 16px;
+    background: var(--border2);
+  }
+  .top-nav-link {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text3);
+    text-decoration: none;
+    padding: 4px 0;
+    border-bottom: 1.5px solid transparent;
+    transition: all .15s;
+  }
+  .top-nav-link:hover { color: var(--text); }
+  .top-nav-link.active { color: var(--text); border-bottom-color: var(--text); }
+
+  @media (max-width: 600px) {
+    .site-header { padding: 14px 16px; }
+    .container { padding: 20px 14px 48px; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .overview-grid { grid-template-columns: 1fr 1fr; }
+    .ch-title { font-size: 20px; }
+    .chapter-nav { gap: 4px; }
+    .ch-btn { font-size: 12px; padding: 6px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <span class="top-nav-brand">Vỡ lòng Tech</span>
+  <div class="top-nav-divider"></div>
+  <a href="index.html" class="top-nav-link active">Tổng quan</a>
+  <a href="page02.html" class="top-nav-link">Khóa học</a>
+</nav>
+
+<header class="site-header">
+  <div class="logo">System Design <span>— Vỡ lòng Tech</span></div>
+  <div class="header-tag">5 Chapters · 35+ Concepts</div>
+</header>
+
+<div class="container">
+
+  <nav class="chapter-nav" role="tablist">
+    <button class="ch-btn active" onclick="switchChapter(0)">Intro</button>
+    <button class="ch-btn" onclick="switchChapter(1)">Ch.I · Hạ tầng</button>
+    <button class="ch-btn" onclick="switchChapter(2)">Ch.II · Database</button>
+    <button class="ch-btn" onclick="switchChapter(3)">Ch.III · Kiến trúc</button>
+    <button class="ch-btn" onclick="switchChapter(4)">Ch.IV · Nâng cao</button>
+    <button class="ch-btn" onclick="switchChapter(5)">Ch.V · Case Studies</button>
+  </nav>
+
+  <!-- INTRO -->
+  <div class="chapter-panel active" id="ch0">
+    <div class="ch-header">
+      <div class="ch-tag">Getting Started</div>
+      <div class="ch-title">System Design là gì?</div>
+      <div class="ch-desc">Quá trình định nghĩa kiến trúc, giao diện và dữ liệu cho một hệ thống thỏa mãn yêu cầu cụ thể. Đây là những quyết định đầu tiên — và khó sửa nhất — khi build sản phẩm.</div>
+    </div>
+    <div class="detail-panel">
+      <span class="detail-emoji">🗺️</span>
+      <div class="detail-title">Tại sao System Design quan trọng?</div>
+      <div class="detail-body" style="margin-top:12px;">
+        Khi build một sản phẩm — kể cả website trading — những quyết định về kiến trúc cần được đưa ra <strong>từ sớm</strong>. Nếu chọn sai, về sau rất khó sửa mà không viết lại toàn bộ hệ thống.<br><br>
+        System Design bao gồm tất cả các lớp: từ hạ tầng mạng → database → backend API → frontend → cách dữ liệu được lưu và truy xuất.<br><br>
+        <strong>Câu hỏi cốt lõi:</strong> Nếu có 1 triệu người dùng cùng lúc, hệ thống có chịu được không? Nếu server sập, data có mất không? Nếu cần thêm tính năng, có phải viết lại không?
+      </div>
+      <hr>
+      <div class="overview-grid">
+        <div class="ov-card"><span class="ov-icon">🌐</span><div class="ov-title">Infrastructure</div><div class="ov-sub">Mạng, server, CDN, caching</div></div>
+        <div class="ov-card"><span class="ov-icon">🗄️</span><div class="ov-title">Data Layer</div><div class="ov-sub">Database, storage, indexing</div></div>
+        <div class="ov-card"><span class="ov-icon">⚙️</span><div class="ov-title">Application</div><div class="ov-sub">Backend, API, business logic</div></div>
+      </div>
+      <div class="web-apply" style="margin-top:20px;">
+        <div class="web-apply-label"><i class="ti ti-arrow-right"></i> Áp dụng cho web trading</div>
+        <div class="web-apply-text">Trước khi code bất cứ thứ gì, cần quyết định: database nào lưu quiz + XP? Backend có cần server riêng không? Video/ảnh host ở đâu? Đây chính là System Design.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CH1 -->
+  <div class="chapter-panel" id="ch1">
+    <div class="ch-header">
+      <div class="ch-tag">Chapter I</div>
+      <div class="ch-title">Hạ tầng & Mạng</div>
+      <div class="ch-desc">IP, DNS, Load Balancing, Caching, CDN, Proxy, Availability, Scalability, Storage. Đây là nền móng của mọi hệ thống web.</div>
+    </div>
+    <div class="topic-grid">
+      <div class="topic-card" onclick="showDetail('ch1','ip',this)"><span class="tc-icon">🌐</span><div class="tc-name">IP Address</div><div class="tc-short">IPv4, IPv6, Public/Private</div></div>
+      <div class="topic-card" onclick="showDetail('ch1','osi',this)"><span class="tc-icon">📚</span><div class="tc-name">OSI Model</div><div class="tc-short">7 tầng mạng</div></div>
+      <div class="topic-card" onclick="showDetail('ch1','tcp',this)"><span class="tc-icon">🤝</span><div class="tc-name">TCP & UDP</div><div class="tc-short">Giao thức truyền dữ liệu</div></div>
+      <div class="topic-card" onclick="showDetail('ch1','dns',this)"><span class="tc-icon">📖</span><div class="tc-name">DNS</div><div class="tc-short">Domain Name System</div></div>
+      <div class="topic-card" onclick="showDetail('ch1','lb',this)"><span class="tc-icon">⚖️</span><div class="tc-name">Load Balancing</div><div class="tc-short">Phân phối traffic</div></div>
+      <div class="topic-card" onclick="showDetail('ch1','cache',this)"><span class="tc-icon">⚡</span><div class="tc-name">Caching</div><div class="tc-short">Tăng tốc truy xuất</div></div>
+      <div class="topic-card" onclick="showDetail('ch1','cdn',this)"><span class="tc-icon">🌍</span><div class="tc-name">CDN</div><div class="tc-short">Content Delivery Network</div></div>
+      <div class="topic-card" onclick="showDetail('ch1','storage',this)"><span class="tc-icon">💾</span><div class="tc-name">Storage</div><div class="tc-short">File, Block, Object</div></div>
+    </div>
+    <div class="detail-panel" id="ch1-detail"><div class="detail-empty"><i class="ti ti-hand-click"></i><span>Chọn một khái niệm để xem chi tiết</span></div></div>
+  </div>
+
+  <!-- CH2 -->
+  <div class="chapter-panel" id="ch2">
+    <div class="ch-header">
+      <div class="ch-tag">Chapter II</div>
+      <div class="ch-title">Database & Dữ liệu</div>
+      <div class="ch-desc">SQL, NoSQL, Replication, Indexes, Normalization, ACID, CAP theorem, Sharding. Đây là phần quyết định cách dữ liệu được lưu trữ và truy xuất.</div>
+    </div>
+    <div class="topic-grid">
+      <div class="topic-card" onclick="showDetail('ch2','db',this)"><span class="tc-icon">🗄️</span><div class="tc-name">Database & DBMS</div><div class="tc-short">Nền tảng cơ sở dữ liệu</div></div>
+      <div class="topic-card" onclick="showDetail('ch2','sqlnosql',this)"><span class="tc-icon">⚖️</span><div class="tc-name">SQL vs NoSQL</div><div class="tc-short">Khi nào dùng cái nào?</div></div>
+      <div class="topic-card" onclick="showDetail('ch2','replication',this)"><span class="tc-icon">🔄</span><div class="tc-name">Replication</div><div class="tc-short">Sao lưu & đồng bộ data</div></div>
+      <div class="topic-card" onclick="showDetail('ch2','index',this)"><span class="tc-icon">📑</span><div class="tc-name">Indexes</div><div class="tc-short">Tăng tốc truy vấn</div></div>
+      <div class="topic-card" onclick="showDetail('ch2','acid',this)"><span class="tc-icon">🛡️</span><div class="tc-name">ACID & BASE</div><div class="tc-short">Tính toàn vẹn dữ liệu</div></div>
+      <div class="topic-card" onclick="showDetail('ch2','cap',this)"><span class="tc-icon">📐</span><div class="tc-name">CAP Theorem</div><div class="tc-short">Ba ràng buộc phân tán</div></div>
+      <div class="topic-card" onclick="showDetail('ch2','sharding',this)"><span class="tc-icon">🔀</span><div class="tc-name">Sharding</div><div class="tc-short">Chia nhỏ database</div></div>
+      <div class="topic-card" onclick="showDetail('ch2','normal',this)"><span class="tc-icon">🧹</span><div class="tc-name">Normalization</div><div class="tc-short">Tổ chức dữ liệu chuẩn</div></div>
+    </div>
+    <div class="detail-panel" id="ch2-detail"><div class="detail-empty"><i class="ti ti-hand-click"></i><span>Chọn một khái niệm để xem chi tiết</span></div></div>
+  </div>
+
+  <!-- CH3 -->
+  <div class="chapter-panel" id="ch3">
+    <div class="ch-header">
+      <div class="ch-tag">Chapter III</div>
+      <div class="ch-title">Kiến trúc Hệ thống</div>
+      <div class="ch-desc">N-tier, Message Queues, Microservices vs Monolith, Event-Driven, API Gateway, REST/GraphQL, WebSockets. Đây là xương sống của backend.</div>
+    </div>
+    <div class="topic-grid">
+      <div class="topic-card" onclick="showDetail('ch3','ntier',this)"><span class="tc-icon">🏗️</span><div class="tc-name">N-tier Architecture</div><div class="tc-short">Phân tầng hệ thống</div></div>
+      <div class="topic-card" onclick="showDetail('ch3','queue',this)"><span class="tc-icon">📬</span><div class="tc-name">Message Queue</div><div class="tc-short">Hàng đợi xử lý tác vụ</div></div>
+      <div class="topic-card" onclick="showDetail('ch3','micro',this)"><span class="tc-icon">🧩</span><div class="tc-name">Microservices</div><div class="tc-short">So sánh với Monolith</div></div>
+      <div class="topic-card" onclick="showDetail('ch3','api',this)"><span class="tc-icon">🔌</span><div class="tc-name">REST & GraphQL</div><div class="tc-short">Thiết kế API</div></div>
+      <div class="topic-card" onclick="showDetail('ch3','ws',this)"><span class="tc-icon">🔃</span><div class="tc-name">WebSockets & SSE</div><div class="tc-short">Real-time communication</div></div>
+      <div class="topic-card" onclick="showDetail('ch3','gw',this)"><span class="tc-icon">🚪</span><div class="tc-name">API Gateway</div><div class="tc-short">Cổng vào hệ thống</div></div>
+    </div>
+    <div class="detail-panel" id="ch3-detail"><div class="detail-empty"><i class="ti ti-hand-click"></i><span>Chọn một khái niệm để xem chi tiết</span></div></div>
+  </div>
+
+  <!-- CH4 -->
+  <div class="chapter-panel" id="ch4">
+    <div class="ch-header">
+      <div class="ch-tag">Chapter IV</div>
+      <div class="ch-title">Kỹ thuật Nâng cao</div>
+      <div class="ch-desc">Rate Limiting, Circuit Breaker, OAuth, SSL/TLS, Service Discovery, Disaster Recovery, Containers. Bảo mật và độ tin cậy cho hệ thống thật.</div>
+    </div>
+    <div class="topic-grid">
+      <div class="topic-card" onclick="showDetail('ch4','rate',this)"><span class="tc-icon">🚦</span><div class="tc-name">Rate Limiting</div><div class="tc-short">Giới hạn tần suất request</div></div>
+      <div class="topic-card" onclick="showDetail('ch4','circuit',this)"><span class="tc-icon">⚡</span><div class="tc-name">Circuit Breaker</div><div class="tc-short">Ngắt mạch khi lỗi</div></div>
+      <div class="topic-card" onclick="showDetail('ch4','oauth',this)"><span class="tc-icon">🔑</span><div class="tc-name">OAuth 2.0</div><div class="tc-short">Xác thực & phân quyền</div></div>
+      <div class="topic-card" onclick="showDetail('ch4','ssl',this)"><span class="tc-icon">🔒</span><div class="tc-name">SSL / TLS</div><div class="tc-short">Mã hóa kết nối</div></div>
+      <div class="topic-card" onclick="showDetail('ch4','docker',this)"><span class="tc-icon">🐳</span><div class="tc-name">Containers & VMs</div><div class="tc-short">Docker, Kubernetes cơ bản</div></div>
+      <div class="topic-card" onclick="showDetail('ch4','sla',this)"><span class="tc-icon">📊</span><div class="tc-name">SLA / SLO / SLI</div><div class="tc-short">Cam kết chất lượng dịch vụ</div></div>
+    </div>
+    <div class="detail-panel" id="ch4-detail"><div class="detail-empty"><i class="ti ti-hand-click"></i><span>Chọn một khái niệm để xem chi tiết</span></div></div>
+  </div>
+
+  <!-- CH5 -->
+  <div class="chapter-panel" id="ch5">
+    <div class="ch-header">
+      <div class="ch-tag">Chapter V</div>
+      <div class="ch-title">Case Studies Thực tế</div>
+      <div class="ch-desc">Thiết kế hệ thống thực: URL Shortener, WhatsApp, Twitter, Netflix, Uber. Mỗi case áp dụng toàn bộ kiến thức từ các chương trước.</div>
+    </div>
+    <div class="topic-grid">
+      <div class="topic-card" onclick="showDetail('ch5','url',this)"><span class="tc-icon">🔗</span><div class="tc-name">URL Shortener</div><div class="tc-short">Ví dụ: bit.ly, tinyurl</div></div>
+      <div class="topic-card" onclick="showDetail('ch5','whatsapp',this)"><span class="tc-icon">💬</span><div class="tc-name">WhatsApp</div><div class="tc-short">Messaging ở scale lớn</div></div>
+      <div class="topic-card" onclick="showDetail('ch5','twitter',this)"><span class="tc-icon">🐦</span><div class="tc-name">Twitter / X</div><div class="tc-short">Social feed & fanout</div></div>
+      <div class="topic-card" onclick="showDetail('ch5','netflix',this)"><span class="tc-icon">🎬</span><div class="tc-name">Netflix</div><div class="tc-short">Video streaming ở scale</div></div>
+      <div class="topic-card" onclick="showDetail('ch5','uber',this)"><span class="tc-icon">🚗</span><div class="tc-name">Uber</div><div class="tc-short">Real-time location matching</div></div>
+    </div>
+    <div class="detail-panel" id="ch5-detail"><div class="detail-empty"><i class="ti ti-hand-click"></i><span>Chọn một case study để xem phân tích</span></div></div>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  Dựa trên giáo trình System Design của Karan Pratap Singh &nbsp;·&nbsp; Biên soạn cho web trading
+</footer>
+
+<script>
+const chapters = ['ch0','ch1','ch2','ch3','ch4','ch5'];
+
+function switchChapter(i) {
+  chapters.forEach((c, j) => {
+    document.getElementById(c).classList.toggle('active', j === i);
+  });
+  document.querySelectorAll('.ch-btn').forEach((b, j) => b.classList.toggle('active', j === i));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+const details = {
+  ch1: {
+    ip: {
+      emoji:'🌐', title:'IP Address',
+      body:`<strong>IP (Internet Protocol)</strong> là địa chỉ duy nhất định danh một thiết bị trên mạng — giống như địa chỉ nhà để bưu tá giao thư.<br><br>
+<strong>IPv4:</strong> 32-bit, ví dụ <code>102.22.192.181</code> — chỉ có ~4 tỷ địa chỉ, gần hết rồi.<br>
+<strong>IPv6:</strong> 128-bit, ví dụ <code>2001:0db8:85a3::8a2e:0370:7334</code> — cung cấp ~340 undecillion địa chỉ.<br><br>
+<strong>Các loại IP:</strong><br>
+• <strong>Public:</strong> Địa chỉ thấy từ bên ngoài internet (do ISP cấp cho router)<br>
+• <strong>Private:</strong> Địa chỉ nội bộ trong mạng LAN (router tự cấp cho devices)<br>
+• <strong>Static:</strong> Cố định, thường dùng cho server hosting — ổn định hơn nhưng đắt hơn<br>
+• <strong>Dynamic:</strong> Thay đổi theo thời gian, rẻ hơn, dùng cho consumer`,
+      tags:[{l:'Public IP',t:''},{l:'Private IP',t:''},{l:'Static IP',t:'use'},{l:'Dynamic IP',t:''}],
+      apply:'Website cần IP tĩnh khi deploy lên server thật. Supabase/Vercel đã xử lý phần này tự động — không cần lo.'
+    },
+    osi: {
+      emoji:'📚', title:'OSI Model — 7 tầng mạng',
+      body:`Mô hình chia communication thành 7 tầng trừu tượng, từ trên xuống:<br><br>
+<strong>7. Application</strong> — HTTP, SMTP, trình duyệt web — tầng user tương tác<br>
+<strong>6. Presentation</strong> — Mã hóa, nén, định dạng dữ liệu (SSL ở đây)<br>
+<strong>5. Session</strong> — Mở/đóng phiên kết nối, checkpoint<br>
+<strong>4. Transport</strong> — TCP/UDP, segment dữ liệu, error checking<br>
+<strong>3. Network</strong> — Routing, IP address, packet forwarding<br>
+<strong>2. Data Link</strong> — Frame, MAC address, switch<br>
+<strong>1. Physical</strong> — Cáp, switch vật lý, bit stream (0/1)`,
+      tags:[{l:'Troubleshooting',t:'use'},{l:'Security mindset',t:'use'},{l:'7 layers',t:''}],
+      extra:'<strong>Khi website bị lỗi, biết OSI giúp xác định lỗi ở tầng nào:</strong> DNS không resolve? → tầng 7. Mất kết nối TCP? → tầng 4. Đứt cáp? → tầng 1.',
+      apply:'Quan trọng để hiểu tại sao HTTPS cần SSL (tầng 6), tại sao CDN giúp tầng 3-4, và tại sao firewall hoạt động ở tầng 3-4.'
+    },
+    tcp: {
+      emoji:'🤝', title:'TCP vs UDP',
+      body:`<strong>TCP (Transmission Control Protocol):</strong><br>
+Đảm bảo dữ liệu đến đủ và đúng thứ tự. Có cơ chế kiểm tra lỗi, handshake 3 bước trước khi truyền. Chậm hơn nhưng tin cậy hoàn toàn.<br><br>
+<strong>UDP (User Datagram Protocol):</strong><br>
+Nhanh hơn, không đảm bảo dữ liệu đến đủ. "Fire and forget" — gửi xong không quan tâm đến nữa. Phù hợp khi tốc độ quan trọng hơn độ chính xác.<br><br>
+<strong>Dùng TCP khi:</strong> Web page, email, file download — cần dữ liệu chính xác 100%.<br>
+<strong>Dùng UDP khi:</strong> Video call, live stream, online game — chấp nhận mất vài packet nếu đổi lấy tốc độ.`,
+      tags:[{l:'TCP: reliable',t:'pro'},{l:'UDP: fast',t:'pro'},{l:'TCP: slower',t:'con'},{l:'UDP: lossy',t:'con'}],
+      apply:'Website trading dùng TCP (HTTPS) cho toàn bộ. Nếu sau này có live chart real-time, có thể xem xét WebSocket over TCP.'
+    },
+    dns: {
+      emoji:'📖', title:'DNS — Domain Name System',
+      body:`DNS giống như danh bạ điện thoại của internet: chuyển đổi tên miền dễ nhớ (<code>google.com</code>) thành địa chỉ IP thật (<code>142.250.80.46</code>).<br><br>
+<strong>Các bước resolve:</strong><br>
+1. Trình duyệt hỏi DNS Resolver (thường do ISP cung cấp)<br>
+2. Resolver hỏi Root nameserver<br>
+3. Root chỉ đến TLD server (.com, .vn...)<br>
+4. TLD chỉ đến Authoritative nameserver<br>
+5. Authoritative trả về IP → kết nối được thực hiện<br><br>
+<strong>TTL (Time To Live):</strong> Thời gian cache DNS record. TTL thấp = update nhanh nhưng nhiều query hơn.`,
+      tags:[{l:'A record',t:'use'},{l:'CNAME',t:'use'},{l:'MX record',t:''},{l:'TTL',t:''}],
+      apply:'Khi mua domain cho web trading, phải cấu hình DNS record trỏ về hosting server. Vercel/Netlify có hướng dẫn step-by-step cực kỳ đơn giản.'
+    },
+    lb: {
+      emoji:'⚖️', title:'Load Balancing',
+      body:`Load Balancer phân phối traffic đến nhiều server, tránh một server bị quá tải và trở thành điểm thất bại duy nhất.<br><br>
+<strong>Các thuật toán phổ biến:</strong><br>
+• <strong>Round Robin:</strong> Lần lượt mỗi server một request (đơn giản nhất)<br>
+• <strong>Least Connections:</strong> Gửi đến server ít kết nối nhất hiện tại<br>
+• <strong>IP Hash:</strong> Cùng user → cùng server (giữ session nhất quán)<br>
+• <strong>Weighted:</strong> Server mạnh hơn nhận nhiều traffic hơn`,
+      tags:[{l:'High availability',t:'pro'},{l:'Horizontal scale',t:'pro'},{l:'Single point of failure',t:'con'},{l:'Added complexity',t:'con'}],
+      extra:'<strong>Layer 4 LB</strong> (transport level) vs <strong>Layer 7 LB</strong> (application level): L7 hiểu được HTTP header, có thể route theo path — /api → server A, /static → CDN.',
+      apply:'Web chưa cần LB ở giai đoạn đầu. Chỉ cần khi traffic tăng lớn. Vercel tự handle điều này phía server của họ.'
+    },
+    cache: {
+      emoji:'⚡', title:'Caching',
+      body:`Cache lưu trữ kết quả truy vấn/tính toán đã thực hiện, để lần sau truy xuất nhanh hơn mà không cần xử lý lại.<br><br>
+<strong>Cache eviction policies:</strong><br>
+• <strong>LRU</strong> (Least Recently Used): Xóa item ít dùng nhất <em>gần đây</em> — phổ biến nhất<br>
+• <strong>LFU</strong> (Least Frequently Used): Xóa item ít được dùng nhất <em>tổng thể</em><br>
+• <strong>FIFO:</strong> Xóa item vào sớm nhất, đơn giản nhất<br><br>
+<strong>Cache hit:</strong> Data có sẵn → trả về ngay (nhanh).<br>
+<strong>Cache miss:</strong> Data không có → query database → lưu vào cache → trả về (chậm hơn lần đầu).`,
+      tags:[{l:'Redis',t:'use'},{l:'Memcached',t:'use'},{l:'CDN cache',t:'use'},{l:'Browser cache',t:''}],
+      apply:'Quiz: cache danh sách câu hỏi theo topic trong Redis để không query DB mỗi lần. Leaderboard cũng nên cache và update theo interval 30s–1 phút.'
+    },
+    cdn: {
+      emoji:'🌍', title:'CDN — Content Delivery Network',
+      body:`CDN là mạng lưới server phân tán toàn cầu, lưu bản sao của static content (ảnh, video, CSS, JS) gần với người dùng nhất.<br><br>
+<strong>Hoạt động:</strong> Origin server (Mỹ) → cache → Edge servers khắp thế giới. User ở Việt Nam sẽ nhận file từ edge server ở Singapore thay vì từ Mỹ → nhanh hơn nhiều lần.<br><br>
+<strong>Push CDN:</strong> Upload lên CDN trước, phù hợp content ít thay đổi.<br>
+<strong>Pull CDN:</strong> CDN tự cache khi user request, phù hợp traffic lớn.`,
+      tags:[{l:'Cloudflare',t:'use'},{l:'AWS CloudFront',t:'use'},{l:'Giảm latency',t:'pro'},{l:'Tốn tiền',t:'con'}],
+      apply:'Video giải thích trading trong web PHẢI dùng CDN. Không có CDN, user Việt Nam load video từ server nước ngoài sẽ rất chậm. Cloudflare free tier là lựa chọn tốt nhất để bắt đầu.'
+    },
+    storage: {
+      emoji:'💾', title:'Storage — Các loại lưu trữ',
+      body:`<strong>File Storage:</strong> Lưu theo cấu trúc thư mục (như ổ cứng bình thường). Ví dụ: Amazon EFS, Google Filestore.<br><br>
+<strong>Block Storage:</strong> Chia data thành block nhỏ, lưu riêng lẻ. Nhanh, dùng cho database. Ví dụ: Amazon EBS.<br><br>
+<strong>Object Storage:</strong> Lưu theo object (file + metadata), không có cấu trúc folder. Scale vô hạn, rẻ nhất. Ví dụ: Amazon S3, Cloudflare R2, Supabase Storage.<br><br>
+<strong>NAS:</strong> Storage device kết nối mạng nội bộ — kiểm soát hoàn toàn.<br>
+<strong>HDFS:</strong> Hadoop Distributed File System — dùng cho big data.`,
+      tags:[{l:'Amazon S3',t:'use'},{l:'Cloudflare R2',t:'use'},{l:'Supabase Storage',t:'use'}],
+      apply:'Ảnh chart, video giải thích nên lưu ở Object Storage. Cloudflare R2 miễn phí egress (không tính tiền bandwidth), hoặc Supabase Storage 1GB free. Đừng bao giờ lưu file trực tiếp trong server!'
+    }
+  },
+  ch2: {
+    db: {
+      emoji:'🗄️', title:'Database & DBMS',
+      body:`<strong>Database:</strong> Tập hợp dữ liệu có tổ chức, lưu điện tử trong máy tính.<br>
+<strong>DBMS (Database Management System):</strong> Phần mềm quản lý database — cho phép CRUD: Create, Read, Update, Delete.<br><br>
+<strong>Các thành phần cơ bản:</strong><br>
+• <strong>Schema:</strong> Cấu trúc, kiểu dữ liệu được phép — như bản vẽ thiết kế<br>
+• <strong>Table:</strong> Bảng dữ liệu (như spreadsheet)<br>
+• <strong>Row:</strong> Một bản ghi cụ thể<br>
+• <strong>Column:</strong> Một thuộc tính của bản ghi<br><br>
+<strong>Các thách thức khi scale:</strong> Data volume lớn, security, real-time access, consistency.`,
+      tags:[{l:'PostgreSQL',t:'use'},{l:'MySQL',t:'use'},{l:'MongoDB',t:'use'},{l:'Firebase',t:'use'}],
+      apply:'Web cần lưu: users, quiz_questions, user_scores, sessions, content_articles. Supabase (PostgreSQL) là lựa chọn tốt vì free tier, auth tích hợp sẵn, real-time subscription.'
+    },
+    sqlnosql: {
+      emoji:'⚖️', title:'SQL vs NoSQL',
+      body:`Hai triết lý khác nhau về lưu trữ dữ liệu. Không có cái nào tốt hơn tuyệt đối — tùy use case.`,
+      tags:[{l:'SQL: structured',t:'use'},{l:'NoSQL: flexible',t:'use'},{l:'ACID',t:'pro'},{l:'Scale out',t:'pro'}],
+      compare: true,
+      extra:'<strong>Dùng SQL khi:</strong> Data có quan hệ phức tạp, cần ACID, reporting, analytics.<br><strong>Dùng NoSQL khi:</strong> Schema thay đổi thường xuyên, cần scale ngang cực lớn, document-heavy như chat messages.',
+      apply:'Với quiz web: SQL (Supabase) phù hợp hơn vì data có quan hệ rõ ràng: user → score → question → topic. Firebase Firestore cũng được nếu muốn real-time dễ hơn.'
+    },
+    replication: {
+      emoji:'🔄', title:'Database Replication',
+      body:`Replication là tạo bản sao của database trên nhiều server để tăng khả năng chịu lỗi và hiệu suất đọc.<br><br>
+<strong>Master-Slave (Primary-Replica):</strong> Master xử lý ghi, Slave xử lý đọc. Đơn giản, phổ biến nhất.<br><br>
+<strong>Master-Master:</strong> Cả hai đều ghi được, phức tạp hơn nhưng không có single point of failure.<br><br>
+<strong>Synchronous vs Asynchronous:</strong><br>
+• Sync: Đảm bảo data an toàn tuyệt đối nhưng chậm hơn<br>
+• Async: Nhanh hơn nhưng có thể mất data nếu master sập trước khi sync`,
+      tags:[{l:'High availability',t:'pro'},{l:'Read scaling',t:'pro'},{l:'Replication lag',t:'con'},{l:'Complexity',t:'con'}],
+      apply:'Supabase tự động setup replication internally. Không cần lo ở giai đoạn đầu — chỉ cần hiểu khái niệm.'
+    },
+    index: {
+      emoji:'📑', title:'Database Indexes',
+      body:`Index là cấu trúc dữ liệu giúp tìm kiếm nhanh hơn — giống như mục lục cuốn sách. Không có index, database phải scan từng row một.<br><br>
+<strong>Trade-off cơ bản:</strong> Đọc nhanh hơn ↔ Ghi chậm hơn + tốn storage.<br><br>
+<strong>Dense Index:</strong> Có entry cho mọi row → binary search nhanh nhưng tốn memory.<br>
+<strong>Sparse Index:</strong> Chỉ có entry cho một số row → nhẹ hơn nhưng scan chậm hơn.<br><br>
+<strong>Nên index:</strong> Các cột thường dùng trong WHERE, JOIN, ORDER BY.<br>
+<strong>Đừng index tất cả</strong> — mỗi index làm chậm INSERT/UPDATE.`,
+      tags:[{l:'Faster reads',t:'pro'},{l:'Slower writes',t:'con'},{l:'More storage',t:'con'}],
+      apply:'Quiz: index cột <code>user_id</code> trong bảng scores, và cột <code>topic</code> trong bảng questions để query nhanh theo topic. PostgreSQL tự suggest index qua EXPLAIN ANALYZE.'
+    },
+    acid: {
+      emoji:'🛡️', title:'ACID & BASE',
+      body:`<strong>ACID (SQL databases):</strong> Đảm bảo tính toàn vẹn dữ liệu hoàn toàn.<br>
+• <strong>A</strong>tomicity: Giao dịch hoàn toàn thành công hoặc hoàn toàn thất bại — không có trạng thái giữa chừng<br>
+• <strong>C</strong>onsistency: Dữ liệu luôn hợp lệ theo schema và rules<br>
+• <strong>I</strong>solation: Các giao dịch đồng thời không ảnh hưởng nhau<br>
+• <strong>D</strong>urability: Sau khi commit, data không mất dù server sập<br><br>
+<strong>BASE (NoSQL databases):</strong> Ưu tiên availability hơn consistency.<br>
+• <strong>Ba</strong>sically Available: Luôn có response, dù không phải mới nhất<br>
+• <strong>S</strong>oft state: State có thể thay đổi theo thời gian<br>
+• <strong>E</strong>ventually consistent: Cuối cùng sẽ nhất quán`,
+      tags:[{l:'ACID: safe',t:'pro'},{l:'BASE: scalable',t:'pro'},{l:'ACID: slower',t:'con'}],
+      extra:'<strong>Ví dụ ACID thực tế:</strong> Chuyển tiền ngân hàng — tiền bị trừ bên này PHẢI được cộng bên kia. Không thể mất 100k giữa chừng.',
+      apply:'XP system cần ACID: khi user trả lời đúng, XP phải được cập nhật chính xác, không được mất data. Supabase PostgreSQL có đầy đủ ACID.'
+    },
+    cap: {
+      emoji:'📐', title:'CAP Theorem',
+      body:`Một distributed system chỉ có thể đảm bảo <strong>2 trong 3</strong> tính chất cùng lúc:<br><br>
+• <strong>C</strong>onsistency: Mọi node đều thấy data mới nhất sau mỗi write<br>
+• <strong>A</strong>vailability: Luôn có phản hồi (dù chưa phải data mới nhất)<br>
+• <strong>P</strong>artition Tolerance: Hệ thống vẫn chạy dù mạng giữa các node bị đứt<br><br>
+Trong thực tế, Partition xảy ra bất cứ lúc nào → P luôn cần → phải <strong>chọn giữa C và A</strong>.<br><br>
+<strong>CP:</strong> MongoDB, HBase — chọn consistency, có thể không available khi partition.<br>
+<strong>AP:</strong> DynamoDB, Cassandra — chọn availability, chấp nhận stale data.`,
+      tags:[{l:'CP: Banks, finance',t:'use'},{l:'AP: Social media',t:'use'},{l:'Distributed systems',t:''}],
+      apply:'Web quiz: CP phù hợp hơn vì XP score phải chính xác — không được xảy ra tình trạng một user thấy score khác người khác.'
+    },
+    sharding: {
+      emoji:'🔀', title:'Sharding',
+      body:`Sharding là chia nhỏ database thành nhiều phần (shard) trên nhiều server, mỗi shard chứa một tập con của dữ liệu.<br><br>
+<strong>Horizontal Partitioning:</strong> Chia theo row (user A-M → shard 1, user N-Z → shard 2) — phổ biến nhất.<br>
+<strong>Vertical Partitioning:</strong> Chia theo column (user info ở một chỗ, activity log ở chỗ khác).<br><br>
+<strong>Consistent Hashing:</strong> Phân phối đều data vào các shard, minimize re-sharding khi thêm/bớt node.`,
+      tags:[{l:'Scale-out',t:'pro'},{l:'High complexity',t:'con'},{l:'Cross-shard queries slow',t:'con'}],
+      extra:'<strong>Sharding chỉ cần khi</strong> database quá lớn cho 1 server (thường từ hàng trăm GB đến TB). Hầu hết startups không bao giờ cần đến đây trong nhiều năm đầu.',
+      apply:'Chưa cần lo đến sharding nhiều năm nữa. Chỉ cần biết khái niệm để hiểu tại sao các system lớn như Twitter/Facebook phải làm vậy.'
+    },
+    normal: {
+      emoji:'🧹', title:'Normalization & Denormalization',
+      body:`<strong>Normalization:</strong> Tổ chức database để loại bỏ dữ liệu trùng lặp, tránh 3 loại anomaly:<br>
+• <strong>Insertion anomaly:</strong> Không thể thêm data vì thiếu thông tin khác<br>
+• <strong>Update anomaly:</strong> Phải update nhiều nơi khi một field thay đổi<br>
+• <strong>Deletion anomaly:</strong> Xóa data này kéo theo xóa data khác không liên quan<br><br>
+<strong>Các Normal Forms (NF):</strong> 1NF → 2NF → 3NF → BCNF — càng cao càng ít trùng lặp, càng nhiều JOIN.<br><br>
+<strong>Denormalization:</strong> Cố ý lưu data trùng lặp để tăng tốc đọc. Trade-off: nhanh hơn nhưng khó maintain hơn.`,
+      tags:[{l:'Less redundancy',t:'pro'},{l:'Faster reads (denorm)',t:'pro'},{l:'Complex joins',t:'con'}],
+      extra:'<strong>Quy tắc vàng:</strong> Normalize first, denormalize only when you measure a performance problem.',
+      apply:'Bảng quiz_questions nên normalized: câu hỏi, câu trả lời, explanation ở table riêng. Không nên nhét hết vào 1 JSON blob — sẽ rất khó query sau này.'
+    }
+  },
+  ch3: {
+    ntier: {
+      emoji:'🏗️', title:'N-tier Architecture',
+      body:`Phân tách hệ thống thành các tầng độc lập, mỗi tầng chỉ communicate với tầng liền kề.<br><br>
+<strong>3-tier phổ biến nhất:</strong><br>
+• <strong>Presentation</strong> (Frontend): React, HTML/CSS, giao diện user — chạy trên browser<br>
+• <strong>Application</strong> (Backend): Business logic, API, xử lý dữ liệu — chạy trên server<br>
+• <strong>Data</strong> (Database): Lưu trữ dữ liệu — PostgreSQL, MongoDB...<br><br>
+Mỗi tầng có thể scale riêng biệt, thay thế riêng biệt mà không ảnh hưởng tầng khác.`,
+      tags:[{l:'Separation of concerns',t:'pro'},{l:'Scalable per tier',t:'pro'},{l:'Latency between tiers',t:'con'}],
+      showArch: true,
+      apply:'Kiến trúc này là nền tảng của web trading: Next.js (Frontend) + Supabase Edge Functions (Backend) + Supabase PostgreSQL (Database).'
+    },
+    queue: {
+      emoji:'📬', title:'Message Queue & Pub/Sub',
+      body:`Message Queue là hàng đợi trung gian: Producer gửi message vào queue, Consumer xử lý từ từ. Hai bên không cần biết nhau — hoàn toàn decoupled.<br><br>
+<strong>Tại sao cần?</strong> Khi xử lý tác vụ nặng (gửi email, resize ảnh, export PDF, generate report), không nên làm đồng bộ trong HTTP request → block user waiting.<br><br>
+<strong>Publish-Subscribe:</strong> Một message có thể gửi đến nhiều consumer cùng lúc (Fan-out). Ví dụ: user level up → gửi email, cập nhật leaderboard, ghi log — đồng thời.`,
+      tags:[{l:'RabbitMQ',t:'use'},{l:'Apache Kafka',t:'use'},{l:'AWS SQS',t:'use'},{l:'Decoupling',t:'pro'}],
+      apply:'Nếu muốn gửi email "Chúc mừng level up!" cho học viên, dùng queue để xử lý background thay vì chặn response. Supabase Edge Functions + Resend là combo đơn giản.'
+    },
+    micro: {
+      emoji:'🧩', title:'Microservices vs Monolith',
+      body:`<strong>Monolith:</strong> Toàn bộ app trong một codebase duy nhất. Deploy một lần. Đơn giản, dễ debug, phổ biến cho startups và team nhỏ.<br><br>
+<strong>Microservices:</strong> Tách thành nhiều service nhỏ độc lập — Auth service, Payment service, Notification service... Mỗi service deploy riêng, scale riêng, thậm chí viết bằng ngôn ngữ khác.<br><br>
+<strong>Trade-off:</strong> Microservices scale tốt hơn nhưng phức tạp hơn gấp nhiều lần về ops, monitoring, debugging.<br><br>
+<em>"Don't start with microservices" — Sam Newman (tác giả sách Microservices)</em>`,
+      tags:[{l:'Monolith: simple',t:'pro'},{l:'Micro: scalable',t:'pro'},{l:'Micro: complex ops',t:'con'},{l:'Monolith: scale limit',t:'con'}],
+      extra:'<strong>Netflix</strong> chuyển từ Monolith → Microservices mất 7 năm (2009–2016). Bài học: đừng bắt đầu với Microservices, migrate khi Monolith thực sự gây đau.',
+      apply:'Monolith hoàn toàn đủ. Next.js + Supabase là monolith thực dụng, deploy đơn giản trên Vercel trong vài phút.'
+    },
+    api: {
+      emoji:'🔌', title:'REST vs GraphQL vs gRPC',
+      body:`<strong>REST:</strong> API thiết kế xung quanh resource. Mỗi endpoint = một resource. Đơn giản, phổ biến nhất.<br>
+<code>GET /users/123</code> &nbsp; <code>POST /quiz/submit</code> &nbsp; <code>DELETE /session/456</code><br><br>
+<strong>GraphQL:</strong> Một endpoint duy nhất, client tự khai báo data nào cần.<br>
+<code>POST /graphql</code> với query: <code>{ user(id: 123) { name, xp, level } }</code><br>
+→ Không over-fetch, không under-fetch. Tốt khi frontend complex.<br><br>
+<strong>gRPC:</strong> Protocol của Google, dùng binary format (Protocol Buffers), nhanh hơn JSON nhưng khó debug, chủ yếu dùng giữa các microservices.`,
+      tags:[{l:'REST: simple',t:'pro'},{l:'GraphQL: flexible',t:'pro'},{l:'gRPC: fast',t:'pro'},{l:'GraphQL: complex',t:'con'}],
+      apply:'Dùng REST API: POST /api/quiz/submit để nộp bài, GET /api/user/xp để lấy điểm. Supabase cung cấp REST API tự động cho mọi bảng database.'
+    },
+    ws: {
+      emoji:'🔃', title:'WebSockets & Real-time',
+      body:`<strong>Long Polling:</strong> Client liên tục hỏi server "có gì mới không?" mỗi N giây. Đơn giản nhưng tốn tài nguyên và không thực sự real-time.<br><br>
+<strong>WebSocket:</strong> Kết nối hai chiều, liên tục (persistent) giữa client và server. Server có thể push data bất kỳ lúc nào mà không cần client hỏi. Thực sự real-time.<br><br>
+<strong>SSE (Server-Sent Events):</strong> Một chiều: server → client. Nhẹ hơn WebSocket, đủ dùng cho nhiều trường hợp (notifications, live feed).<br><br>
+<strong>Dùng WebSocket khi:</strong> Chat, multiplayer game, collaborative editing — cần real-time 2 chiều.<br>
+<strong>Dùng SSE khi:</strong> Live feed, notifications — chỉ cần server push.`,
+      tags:[{l:'WebSocket: bi-directional',t:'use'},{l:'SSE: server push',t:'use'},{l:'Socket.io',t:'use'}],
+      apply:'Nếu muốn quiz có countdown timer đồng bộ với server hoặc leaderboard real-time, cần WebSocket. Supabase Realtime sử dụng WebSocket internally — cực kỳ dễ setup.'
+    },
+    gw: {
+      emoji:'🚪', title:'API Gateway',
+      body:`API Gateway là cổng vào duy nhất của hệ thống — client chỉ nói chuyện với Gateway, Gateway route đến đúng service phía sau.<br><br>
+<strong>Chức năng API Gateway:</strong><br>
+• <strong>Authentication & Authorization:</strong> Verify token ở một chỗ<br>
+• <strong>Rate Limiting:</strong> Giới hạn request per user<br>
+• <strong>Request routing:</strong> /api/* → backend, /static/* → CDN<br>
+• <strong>Load balancing:</strong> Phân phối traffic<br>
+• <strong>Logging & Monitoring:</strong> Tập trung ở một điểm`,
+      tags:[{l:'AWS API Gateway',t:'use'},{l:'Kong',t:'use'},{l:'Nginx',t:'use'},{l:'Central auth',t:'pro'}],
+      apply:'Next.js middleware đóng vai trò API Gateway đơn giản: check auth token trước khi cho vào /api routes. Admin panel cần middleware check password trước khi cho access.'
+    }
+  },
+  ch4: {
+    rate: {
+      emoji:'🚦', title:'Rate Limiting',
+      body:`Rate Limiting giới hạn số lượng request một user/IP có thể gửi trong một khoảng thời gian.<br><br>
+<strong>Tại sao cần?</strong><br>
+• Ngăn DDoS attack<br>
+• Ngăn spam quiz (submit liên tục không đọc)<br>
+• Kiểm soát chi phí API bên thứ ba<br>
+• Đảm bảo fair usage cho mọi người<br><br>
+<strong>Token Bucket Algorithm:</strong> Mỗi user có bucket với N tokens. Mỗi request tiêu 1 token. Tokens hồi phục theo tốc độ cố định. Nếu hết token → 429 Too Many Requests.`,
+      tags:[{l:'DDoS protection',t:'pro'},{l:'Fair usage',t:'pro'},{l:'429 Too Many Requests',t:''}],
+      apply:'Admin quiz panel: giới hạn 5 lần submit sai mật khẩu trong 10 phút để tránh brute force. Vercel cung cấp rate limiting tích hợp cho Edge Functions.'
+    },
+    circuit: {
+      emoji:'⚡', title:'Circuit Breaker',
+      body:`Khi một service liên tục bị lỗi, Circuit Breaker "ngắt mạch" — tạm thời không gửi request đến service đó nữa, trả về lỗi ngay lập tức thay vì đợi timeout.<br><br>
+<strong>3 trạng thái:</strong><br>
+• <strong>Closed (bình thường):</strong> Requests được gửi đi, error rate được monitor<br>
+• <strong>Open (đã ngắt):</strong> Fail ngay lập tức, không gửi request — tiết kiệm tài nguyên<br>
+• <strong>Half-Open (thử lại):</strong> Cho phép một số request thử qua để kiểm tra recovery<br><br>
+<strong>Ví dụ:</strong> Nếu payment service liên tục timeout, thay vì mỗi request đợi 30s rồi mới fail → circuit breaker fail ngay trong 1ms.`,
+      tags:[{l:'Resilience',t:'pro'},{l:'Fail fast',t:'pro'},{l:'Netflix Hystrix',t:'use'}],
+      apply:'Relevant khi có nhiều external API (payment, email service) và muốn graceful degradation — thay vì crash toàn bộ, hiển thị "feature tạm không khả dụng".'
+    },
+    oauth: {
+      emoji:'🔑', title:'OAuth 2.0 & Authentication',
+      body:`<strong>Authentication:</strong> Xác nhận danh tính — bạn là ai?<br>
+<strong>Authorization:</strong> Phân quyền — bạn được làm gì?<br><br>
+<strong>OAuth 2.0:</strong> Cho phép app của bạn truy cập tài nguyên của user ở service khác mà không cần biết mật khẩu. Đây là cơ chế "Đăng nhập với Google/GitHub/Facebook".<br><br>
+Flow: User → App → Google → User approve → Google cấp token → App dùng token để lấy user info.<br><br>
+<strong>JWT (JSON Web Token):</strong> Token chứa thông tin user, được ký bằng secret key. Server verify token mà không cần query DB → stateless, nhanh.`,
+      tags:[{l:'OAuth: Login with Google',t:'use'},{l:'JWT: stateless',t:'use'},{l:'SSO: Single Sign-On',t:'use'}],
+      apply:'Admin panel dùng password đơn giản (coach123). User-facing có thể dùng Supabase Auth — hỗ trợ Google OAuth, Email/Password, Magic Link sẵn, không cần tự code.'
+    },
+    ssl: {
+      emoji:'🔒', title:'SSL / TLS / mTLS',
+      body:`<strong>SSL/TLS:</strong> Mã hóa kết nối giữa client và server. HTTPS = HTTP + TLS. Mọi website hiện đại PHẢI có — browser sẽ cảnh báo "Not Secure" nếu không có.<br><br>
+<strong>Cách hoạt động (TLS Handshake):</strong><br>
+1. Client gửi "hello" + danh sách cipher hỗ trợ<br>
+2. Server gửi certificate (do CA cấp — Let's Encrypt, DigiCert...)<br>
+3. Client verify certificate là hợp lệ<br>
+4. Tạo shared secret key để mã hóa toàn bộ session<br><br>
+<strong>mTLS:</strong> Cả 2 phía đều xác thực nhau (mutual) — dùng trong microservices nội bộ.`,
+      tags:[{l:"Let's Encrypt",t:'use'},{l:'Cloudflare SSL',t:'use'},{l:'Required for HTTPS',t:'use'}],
+      apply:'Vercel và Supabase tự động cấp SSL certificate miễn phí qua Let\'s Encrypt. Không cần làm gì thêm — HTTPS được setup tự động khi deploy.'
+    },
+    docker: {
+      emoji:'🐳', title:'Containers & Virtual Machines',
+      body:`<strong>Virtual Machine (VM):</strong> Giả lập toàn bộ máy tính kể cả OS. Nặng (~GB), khởi động chậm (~phút). Isolated hoàn toàn, bảo mật cao.<br><br>
+<strong>Container (Docker):</strong> Đóng gói app và dependencies, share kernel với host OS. Nhẹ (~MB), khởi động nhanh (~giây). "Works on my machine" problem được giải quyết.<br><br>
+<strong>Kubernetes:</strong> Orchestration platform — tự động quản lý, scale, restart, load balance containers. Phức tạp nhưng mạnh mẽ.<br><br>
+<em>"Nó chạy được trên máy tôi" → Docker: đóng gói cả môi trường, chạy ở đâu cũng được.</em>`,
+      tags:[{l:'Docker',t:'use'},{l:'Kubernetes',t:'use'},{l:'Containers: portable',t:'pro'},{l:'VM: full isolation',t:'pro'}],
+      apply:'Chưa cần Docker ở giai đoạn đầu. Vercel xử lý deployment tự động. Nhưng hiểu Docker quan trọng khi muốn self-host hoặc setup CI/CD pipeline sau này.'
+    },
+    sla: {
+      emoji:'📊', title:'SLA / SLO / SLI',
+      body:`<strong>SLI (Indicator):</strong> Chỉ số đo thực tế — "Tháng này uptime đạt 99.97%."<br>
+<strong>SLO (Objective):</strong> Mục tiêu nội bộ team đặt ra — "Target 99.95% uptime." Thường cao hơn SLA một chút để có buffer.<br>
+<strong>SLA (Agreement):</strong> Cam kết chính thức với khách hàng — "Đảm bảo 99.9% uptime, nếu vi phạm sẽ hoàn tiền."<br><br>
+<strong>Error Budget:</strong> Khoảng downtime cho phép. Nếu SLO là 99.9% thì error budget = 8.7h/năm.`,
+      tags:[{l:'Uptime monitoring',t:'use'},{l:'Error budget',t:'use'}],
+      showNines: true,
+      apply:'Khi thu phí học viên, cần commitment về uptime. Vercel SLA là 99.99% — tương đương 52 phút downtime/năm. Đủ tốt cho web trading education.'
+    }
+  },
+  ch5: {
+    url: {
+      emoji:'🔗', title:'URL Shortener (bit.ly)',
+      body:`<strong>Yêu cầu:</strong> Nhận URL dài → trả về URL ngắn 6-8 ký tự. Khi user click → redirect về URL gốc.<br><br>
+<strong>Thành phần:</strong><br>
+• API: <code>POST /shorten</code> nhận long URL<br>
+• Database: lưu mapping <code>short_code → long_url</code><br>
+• Redirect: <code>GET /:code</code> → 301 redirect<br><br>
+<strong>Tạo short code:</strong> Hash URL gốc (MD5/SHA256) rồi lấy 6 ký tự đầu, hoặc dùng base62 encoding từ auto-increment ID (an toàn hơn, không collision).<br><br>
+<strong>Scale considerations:</strong> Cache popular URLs trong Redis, read-heavy nên có nhiều read replicas.`,
+      tags:[{l:'Hashing',t:'use'},{l:'Base62 encoding',t:'use'},{l:'301 redirect',t:'use'},{l:'Cache popular URLs',t:'pro'}],
+      apply:'Nếu muốn tạo link ngắn cho các bài học trading, đây là cách build. Nhưng dùng Bitly free tier thực dụng hơn trong giai đoạn đầu.'
+    },
+    whatsapp: {
+      emoji:'💬', title:'WhatsApp System Design',
+      body:`<strong>Scale:</strong> 2 tỷ users, 100 tỷ messages/ngày, 98.5% uptime.<br><br>
+<strong>Thành phần chính:</strong><br>
+• <strong>WebSocket servers:</strong> Giữ kết nối persistent với mỗi user online<br>
+• <strong>Message Queue (Kafka):</strong> Buffer messages, đảm bảo delivery khi user offline<br>
+• <strong>Database: Cassandra</strong> (NoSQL) — write-heavy, scale ngang tốt, append-only<br>
+• <strong>Media storage: S3</strong> cho ảnh/video, CDN cho delivery<br>
+• <strong>Push notifications:</strong> FCM (Android), APNS (iOS) khi user offline<br><br>
+<strong>End-to-end encryption:</strong> Signal Protocol — server chỉ thấy ciphertext, không đọc được nội dung.`,
+      tags:[{l:'WebSocket',t:'use'},{l:'Kafka',t:'use'},{l:'Cassandra',t:'use'},{l:'E2E encryption',t:'pro'}],
+      apply:'Relevant khi muốn thêm chat/support feature cho học viên. Supabase Realtime + WebSocket đủ dùng cho scale nhỏ.'
+    },
+    twitter: {
+      emoji:'🐦', title:'Twitter / X System Design',
+      body:`<strong>Challenge chính: Fanout Problem</strong><br>
+Elon Musk có 170M followers tweet một cái → phải deliver đến 170M người trong vài giây.<br><br>
+<strong>Hai approach:</strong><br>
+• <strong>Fanout on Write:</strong> Khi tweet → push ngay vào timeline cache của mọi follower. Viết chậm nhưng đọc nhanh.<br>
+• <strong>Fanout on Read:</strong> Khi user mở app → mới tổng hợp timeline từ những người follow. Đọc chậm nhưng viết nhanh.<br><br>
+<strong>Twitter dùng Hybrid:</strong> Celebrity accounts (>1M followers) → fanout on read. User thường → fanout on write.<br><br>
+<strong>Tech stack:</strong> Redis cho timeline cache, Cassandra cho tweets, CDN cho media.`,
+      tags:[{l:'Redis timeline cache',t:'use'},{l:'Cassandra',t:'use'},{l:'Hybrid fanout',t:'use'}],
+      apply:'Nếu trang Market Context có real-time analyst feed từ coach, design pattern tương tự: push update vào cache của tất cả student đang online.'
+    },
+    netflix: {
+      emoji:'🎬', title:'Netflix System Design',
+      body:`<strong>Scale:</strong> 238M subscribers, 100M+ hours xem mỗi ngày, 15% global internet traffic.<br><br>
+<strong>Thành phần chính:</strong><br>
+• <strong>CDN (Open Connect):</strong> Netflix tự build CDN, đặt server ngay tại các ISP. 95%+ traffic qua CDN.<br>
+• <strong>Video Encoding:</strong> Mỗi video encode thành ~120 phiên bản khác nhau (chất lượng × codec × device)<br>
+• <strong>Adaptive Bitrate (ABR):</strong> Tự động điều chỉnh chất lượng theo bandwidth thực tế<br>
+• <strong>Recommendation:</strong> Machine learning trên hàng tỷ điểm data về viewing behavior<br>
+• <strong>Microservices:</strong> 700+ services, mỗi thứ scale riêng, mỗi thứ có thể fail riêng`,
+      tags:[{l:'CDN',t:'use'},{l:'Adaptive bitrate',t:'use'},{l:'Microservices',t:'use'},{l:'AWS',t:'use'}],
+      extra:'<strong>Netflix → AWS migration:</strong> 2009 database bị corrupt → quyết định move toàn bộ lên AWS. Mất 7 năm hoàn thành. Bài học đắt nhất về reliability.',
+      apply:'Rất liên quan! Web có video giải thích trading. Dùng CDN (Cloudflare/Bunny.net) cho video, encode video thành HLS format cho Adaptive Bitrate. Bunny.net ~$0.01/GB bandwidth.'
+    },
+    uber: {
+      emoji:'🚗', title:'Uber System Design',
+      body:`<strong>Challenge chính: Real-time location matching</strong><br>
+Hàng triệu tài xế và hành khách, cần match trong vài giây.<br><br>
+<strong>Thành phần chính:</strong><br>
+• <strong>WebSocket:</strong> Driver liên tục gửi GPS location mỗi 5 giây<br>
+• <strong>Quadtree / Geohashing:</strong> Index địa lý để tìm driver gần nhất cực nhanh<br>
+• <strong>Redis:</strong> Cache vị trí real-time của tất cả driver đang online<br>
+• <strong>Kafka:</strong> Event stream cho location updates — hàng tỷ events/ngày<br>
+• <strong>Surge Pricing:</strong> Dynamic pricing khi demand > supply trong khu vực<br><br>
+<strong>Race condition:</strong> Nhiều hành khách cùng book một tài xế → Distributed lock (Mutex).`,
+      tags:[{l:'Geohashing',t:'use'},{l:'WebSocket',t:'use'},{l:'Redis',t:'use'},{l:'Kafka',t:'use'}],
+      apply:'Nếu muốn Market Context có real-time price streaming từ exchange, pattern tương tự: WebSocket nhận price updates → Redis cache → push đến all connected clients.'
+    }
+  }
+};
+
+function showDetail(ch, key, card) {
+  const d = details[ch]?.[key];
+  if (!d) return;
+
+  document.querySelectorAll(`#${ch} .topic-card`).forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+
+  const panel = document.getElementById(`${ch}-detail`);
+  let html = `<span class="detail-emoji">${d.emoji}</span>
+<div class="detail-title">${d.title}</div>
+<div class="detail-body" style="margin-top:10px;">${d.body}</div>`;
+
+  if (d.tags?.length) {
+    html += '<div class="tag-row">' + d.tags.map(t => `<span class="tag ${t.t}">${t.l}</span>`).join('') + '</div>';
+  }
+
+  if (d.compare) {
+    html += `<div class="compare-grid">
+      <div class="cg-col sql"><div class="cg-head">SQL (Relational)</div>
+        <div class="cg-li">Cấu trúc rõ ràng — bảng, cột, row</div>
+        <div class="cg-li">ACID transactions</div>
+        <div class="cg-li">JOIN nhiều bảng</div>
+        <div class="cg-li">Schema cố định trước</div>
+        <div class="cg-li">PostgreSQL, MySQL, SQLite</div>
+      </div>
+      <div class="cg-col nosql"><div class="cg-head">NoSQL</div>
+        <div class="cg-li">Linh hoạt — document, key-value, graph</div>
+        <div class="cg-li">Scale ngang dễ dàng</div>
+        <div class="cg-li">Không cần JOIN</div>
+        <div class="cg-li">Schema thay đổi được</div>
+        <div class="cg-li">MongoDB, Firebase, Redis, Cassandra</div>
+      </div>
+    </div>`;
+  }
+
+  if (d.showArch) {
+    html += `<div class="arch-diagram">
+      <div class="arch-row"><div class="arch-block">🖥️ Presentation (Frontend)</div><span style="margin-left:10px;font-size:12px;color:var(--text3);">Browser, Mobile App</span></div>
+      <div class="arch-connector"><div style="width:0.5px;height:20px;background:var(--border2);margin-left:28px;"></div></div>
+      <div class="arch-row"><div class="arch-block">⚙️ Application (Backend)</div><span style="margin-left:10px;font-size:12px;color:var(--text3);">Business Logic, API</span></div>
+      <div class="arch-connector"><div style="width:0.5px;height:20px;background:var(--border2);margin-left:28px;"></div></div>
+      <div class="arch-row"><div class="arch-block">🗄️ Data (Database)</div><span style="margin-left:10px;font-size:12px;color:var(--text3);">PostgreSQL, Redis, S3</span></div>
+    </div>`;
+  }
+
+  if (d.showNines) {
+    html += `<table class="nine-table">
+      <thead><tr><th>Availability</th><th>Downtime / năm</th><th>Mức độ</th></tr></thead>
+      <tbody>
+        <tr><td>99%</td><td>87.6 giờ</td><td><span class="avail-badge avail-med">Thấp</span></td></tr>
+        <tr><td>99.9%</td><td>8.7 giờ</td><td><span class="avail-badge avail-med">Trung bình</span></td></tr>
+        <tr><td>99.99%</td><td>52 phút</td><td><span class="avail-badge avail-high">Tốt</span></td></tr>
+        <tr><td>99.999%</td><td>5.3 phút</td><td><span class="avail-badge avail-high">Rất tốt</span></td></tr>
+      </tbody>
+    </table>`;
+  }
+
+  if (d.extra) {
+    html += `<div class="example-box"><strong>Chi tiết thêm:</strong><br>${d.extra}</div>`;
+  }
+
+  if (d.apply) {
+    html += `<div class="web-apply">
+      <div class="web-apply-label"><i class="ti ti-arrow-right"></i> Áp dụng cho web trading</div>
+      <div class="web-apply-text">${d.apply}</div>
+    </div>`;
+  }
+
+  panel.innerHTML = html;
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+</body>
+</html>

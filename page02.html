@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thiết Kế Hệ Thống — Khóa Học Tương Tác</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fafaf8;
+  --surface:#ffffff;
+  --surface2:#f4f3ef;
+  --border:#e8e6e0;
+  --border-strong:#d0cdc5;
+  --text:#1a1916;
+  --text-2:#5a5850;
+  --text-3:#9a9890;
+  --accent:#2d6a4f;
+  --accent-light:#e8f5ee;
+  --accent-text:#1b4332;
+  --ch1:#1565c0;--ch1-bg:#e3f0fd;--ch1-text:#0d3c7a;
+  --ch2:#7b1fa2;--ch2-bg:#f3e8fd;--ch2-text:#4a0e6e;
+  --ch3:#e65100;--ch3-bg:#fff3e0;--ch3-text:#8a2f00;
+  --ch4:#00695c;--ch4-bg:#e0f4f1;--ch4-text:#004d40;
+  --ch5:#c62828;--ch5-bg:#fdecea;--ch5-text:#7f1010;
+  --start:#455a64;--start-bg:#eceff1;--start-text:#263238;
+  --radius:10px;--radius-lg:16px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);
+  --shadow-hover:0 4px 12px rgba(0,0,0,.12),0 8px 32px rgba(0,0,0,.08);
+  --transition:all .2s cubic-bezier(.4,0,.2,1);
+}
+
+body{
+  font-family:'Manrope',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.6;
+  min-height:100vh;
+}
+
+/* ── LAYOUT ── */
+.layout{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:260px;
+  flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  position:fixed;
+  top:40px;left:0;bottom:0;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  z-index:100;
+}
+
+.sidebar-brand{
+  padding:24px 20px 16px;
+  border-bottom:1px solid var(--border);
+}
+
+.brand-label{
+  font-size:10px;font-weight:700;letter-spacing:.1em;
+  color:var(--text-3);text-transform:uppercase;margin-bottom:6px;
+}
+
+.brand-title{
+  font-size:17px;font-weight:800;color:var(--text);line-height:1.3;
+}
+
+.sidebar-search{
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
+}
+
+.search-wrap{
+  position:relative;
+}
+
+.search-wrap input{
+  width:100%;
+  padding:8px 12px 8px 34px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  font-family:'Manrope',sans-serif;
+  font-size:13px;
+  color:var(--text);
+  outline:none;
+  transition:var(--transition);
+}
+
+.search-wrap input:focus{
+  border-color:var(--accent);
+  background:#fff;
+}
+
+.search-icon{
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;opacity:.4;
+}
+
+.sidebar-nav{padding:8px 0 24px;flex:1}
+
+.chapter-group{margin-bottom:4px}
+
+.chapter-label{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 20px 4px;
+  font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-3);
+  cursor:pointer;user-select:none;
+}
+
+.chapter-label:hover{color:var(--text-2)}
+
+.chapter-dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+}
+
+.chapter-arrow{
+  margin-left:auto;font-size:10px;
+  transition:transform .2s;
+}
+
+.chapter-label.collapsed .chapter-arrow{transform:rotate(-90deg)}
+
+.chapter-items{overflow:hidden;transition:max-height .3s ease}
+
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 20px 7px 28px;
+  font-size:13px;font-weight:400;
+  color:var(--text-2);
+  cursor:pointer;
+  border-left:2px solid transparent;
+  transition:var(--transition);
+  line-height:1.4;
+}
+
+.nav-item:hover{
+  color:var(--text);
+  background:var(--surface2);
+}
+
+.nav-item.active{
+  color:var(--accent-text);
+  background:var(--accent-light);
+  border-left-color:var(--accent);
+  font-weight:600;
+}
+
+.nav-item-num{
+  font-size:10px;font-weight:700;
+  color:var(--text-3);
+  min-width:18px;
+}
+
+.nav-item.active .nav-item-num{color:var(--accent)}
+
+/* ── MAIN ── */
+.main{
+  margin-left:260px;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:sticky;top:40px;z-index:50;
+  background:rgba(250,250,248,.92);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+  padding:12px 40px;
+  display:flex;align-items:center;gap:16px;
+}
+
+.topbar-breadcrumb{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;color:var(--text-3);
+}
+
+.topbar-chapter-badge{
+  padding:3px 10px;border-radius:20px;
+  font-size:11px;font-weight:700;
+  background:var(--surface2);color:var(--text-2);
+}
+
+.topbar-sep{opacity:.4;font-size:12px}
+
+.topbar-topic{font-weight:600;color:var(--text);font-size:13px}
+
+.topbar-nav{margin-left:auto;display:flex;gap:8px}
+
+.btn-nav{
+  padding:6px 14px;border-radius:8px;
+  font-family:'Manrope',sans-serif;
+  font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid var(--border-strong);
+  background:var(--surface);color:var(--text-2);
+  transition:var(--transition);
+}
+
+.btn-nav:hover{background:var(--surface2);color:var(--text)}
+.btn-nav:disabled{opacity:.3;cursor:default}
+.btn-nav.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-nav.primary:hover{background:var(--accent-text)}
+
+/* ── CONTENT ── */
+.content{
+  max-width:780px;
+  margin:0 auto;
+  padding:48px 40px 80px;
+  width:100%;
+}
+
+.topic-header{margin-bottom:32px}
+
+.topic-chapter-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:20px;
+  font-size:11px;font-weight:700;letter-spacing:.05em;
+  margin-bottom:16px;
+}
+
+.topic-title{
+  font-size:34px;font-weight:800;
+  line-height:1.15;color:var(--text);
+  margin-bottom:12px;letter-spacing:-.02em;
+}
+
+.topic-title-en{
+  font-size:15px;font-weight:400;color:var(--text-3);
+  font-style:italic;margin-bottom:24px;
+}
+
+.topic-desc{
+  font-size:16px;line-height:1.8;color:var(--text-2);
+  padding:20px 24px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  border-radius:0 var(--radius) var(--radius) 0;
+  margin-bottom:40px;
+}
+
+/* ── SUBSECTIONS ── */
+.subsections{display:flex;flex-direction:column;gap:16px;margin-bottom:40px}
+
+.subsection-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  transition:var(--transition);
+}
+
+.subsection-card:hover{
+  border-color:var(--border-strong);
+  box-shadow:var(--shadow);
+}
+
+.subsection-head{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 20px;
+  cursor:pointer;
+  user-select:none;
+}
+
+.subsection-icon{
+  width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;
+  flex-shrink:0;
+}
+
+.subsection-title{
+  font-size:14px;font-weight:700;color:var(--text);flex:1;
+}
+
+.subsection-toggle{
+  font-size:14px;color:var(--text-3);
+  transition:transform .2s;
+}
+
+.subsection-card.open .subsection-toggle{transform:rotate(180deg)}
+
+.subsection-body{
+  display:none;
+  padding:0 20px 20px;
+  font-size:14px;line-height:1.8;color:var(--text-2);
+  border-top:1px solid var(--border);
+  padding-top:16px;
+}
+
+.subsection-card.open .subsection-body{display:block}
+
+/* ── ORIGINAL LINK ── */
+.original-link{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 18px;
+  background:var(--surface2);
+  border:1px solid var(--border-strong);
+  border-radius:var(--radius);
+  font-size:13px;font-weight:600;color:var(--text-2);
+  text-decoration:none;
+  transition:var(--transition);
+  margin-top:8px;
+}
+
+.original-link:hover{background:var(--border);color:var(--text)}
+
+/* ── PROGRESS ── */
+.progress-bar{
+  position:fixed;top:0;left:260px;right:0;
+  height:2px;background:var(--border);z-index:200;
+}
+
+.progress-fill{
+  height:100%;background:var(--accent);
+  transition:width .3s ease;
+}
+
+/* ── OVERVIEW ── */
+.overview-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:14px;
+  margin-bottom:48px;
+}
+
+.overview-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:16px;
+  cursor:pointer;
+  transition:var(--transition);
+}
+
+.overview-card:hover{
+  box-shadow:var(--shadow-hover);
+  transform:translateY(-2px);
+  border-color:var(--border-strong);
+}
+
+.ov-chapter-tag{
+  font-size:10px;font-weight:700;letter-spacing:.06em;
+  padding:3px 8px;border-radius:12px;
+  display:inline-block;margin-bottom:10px;
+  text-transform:uppercase;
+}
+
+.ov-num{
+  font-size:10px;font-weight:700;color:var(--text-3);
+  margin-bottom:4px;
+}
+
+.ov-title{
+  font-size:13px;font-weight:700;color:var(--text);
+  line-height:1.3;margin-bottom:6px;
+}
+
+.ov-desc{
+  font-size:12px;color:var(--text-3);line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+
+.ov-arrow{
+  margin-top:12px;font-size:12px;color:var(--text-3);
+}
+
+/* ── HOME HERO ── */
+.hero{
+  text-align:center;padding:48px 0 56px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:48px;
+}
+
+.hero-badge{
+  display:inline-block;padding:6px 16px;border-radius:20px;
+  background:var(--accent-light);color:var(--accent-text);
+  font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  margin-bottom:24px;
+}
+
+.hero-title{
+  font-size:48px;font-weight:800;letter-spacing:-.04em;
+  line-height:1.1;color:var(--text);margin-bottom:16px;
+}
+
+.hero-sub{
+  font-size:17px;color:var(--text-2);max-width:520px;margin:0 auto 32px;
+  line-height:1.7;
+}
+
+.stats-row{
+  display:flex;justify-content:center;gap:40px;flex-wrap:wrap;
+  margin-top:32px;
+}
+
+.stat{text-align:center}
+
+.stat-num{
+  font-size:28px;font-weight:800;color:var(--text);
+  letter-spacing:-.03em;
+}
+
+.stat-label{font-size:12px;color:var(--text-3);font-weight:500;margin-top:2px}
+
+/* ── CHAPTER SECTIONS ── */
+.chapter-section{margin-bottom:48px}
+
+.ch-header{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:20px;padding-bottom:12px;
+  border-bottom:1px solid var(--border);
+}
+
+.ch-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+.ch-title{font-size:18px;font-weight:800;color:var(--text)}
+
+.ch-count{
+  margin-left:auto;
+  font-size:11px;font-weight:600;color:var(--text-3);
+}
+
+/* chapter colors */
+[data-ch="Bắt Đầu"] .ov-chapter-tag,.ch-dot[data-ch="Bắt Đầu"]{background:var(--start-bg);color:var(--start-text)}
+[data-ch="Chương I"] .ov-chapter-tag,.ch-dot[data-ch="Chương I"]{background:var(--ch1-bg);color:var(--ch1-text)}
+[data-ch="Chương II"] .ov-chapter-tag,.ch-dot[data-ch="Chương II"]{background:var(--ch2-bg);color:var(--ch2-text)}
+[data-ch="Chương III"] .ov-chapter-tag,.ch-dot[data-ch="Chương III"]{background:var(--ch3-bg);color:var(--ch3-text)}
+[data-ch="Chương IV"] .ov-chapter-tag,.ch-dot[data-ch="Chương IV"]{background:var(--ch4-bg);color:var(--ch4-text)}
+[data-ch="Chương V"] .ov-chapter-tag,.ch-dot[data-ch="Chương V"]{background:var(--ch5-bg);color:var(--ch5-text)}
+
+.topic-chapter-tag[data-ch="Bắt Đầu"]{background:var(--start-bg);color:var(--start-text)}
+.topic-chapter-tag[data-ch="Chương I"]{background:var(--ch1-bg);color:var(--ch1-text)}
+.topic-chapter-tag[data-ch="Chương II"]{background:var(--ch2-bg);color:var(--ch2-text)}
+.topic-chapter-tag[data-ch="Chương III"]{background:var(--ch3-bg);color:var(--ch3-text)}
+.topic-chapter-tag[data-ch="Chương IV"]{background:var(--ch4-bg);color:var(--ch4-text)}
+.topic-chapter-tag[data-ch="Chương V"]{background:var(--ch5-bg);color:var(--ch5-text)}
+
+.subsection-icon[data-ch="Bắt Đầu"]{background:var(--start-bg);color:var(--start-text)}
+.subsection-icon[data-ch="Chương I"]{background:var(--ch1-bg);color:var(--ch1-text)}
+.subsection-icon[data-ch="Chương II"]{background:var(--ch2-bg);color:var(--ch2-text)}
+.subsection-icon[data-ch="Chương III"]{background:var(--ch3-bg);color:var(--ch3-text)}
+.subsection-icon[data-ch="Chương IV"]{background:var(--ch4-bg);color:var(--ch4-text)}
+.subsection-icon[data-ch="Chương V"]{background:var(--ch5-bg);color:var(--ch5-text)}
+
+/* ── SEARCH RESULTS ── */
+.search-results{padding:24px 0}
+.search-results-title{font-size:20px;font-weight:800;margin-bottom:20px;color:var(--text)}
+.search-empty{
+  text-align:center;padding:60px 20px;
+  color:var(--text-3);font-size:15px;
+}
+
+/* ── FOOTER ── */
+.content-footer{
+  margin-top:48px;padding-top:32px;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:16px;
+}
+
+.footer-source{
+  font-size:12px;color:var(--text-3);
+}
+
+.footer-source a{color:var(--text-2);text-decoration:none}
+.footer-source a:hover{color:var(--text)}
+
+/* ── SCROLLBAR ── */
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-track{background:transparent}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── MOBILE ── */
+.mobile-toggle{display:none}
+
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%);transition:transform .3s}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .progress-bar{left:0}
+  .topbar{padding:12px 20px}
+  .content{padding:32px 20px 60px}
+  .hero-title{font-size:32px}
+  .mobile-toggle{
+    display:flex;align-items:center;justify-content:center;
+    width:36px;height:36px;border-radius:8px;
+    background:var(--surface);border:1px solid var(--border);
+    cursor:pointer;font-size:18px;color:var(--text);
+  }
+  .overview-grid{grid-template-columns:1fr}
+}
+
+/* highlight match */
+mark{background:#fff3cd;border-radius:3px;padding:0 2px}
+
+/* SHARED TOP NAV */
+.top-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--border-strong);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 40px;
+  z-index: 300;
+}
+.top-nav-brand {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin-right: 8px;
+}
+.top-nav-divider {
+  width: 0.5px;
+  height: 16px;
+  background: var(--border-strong);
+}
+.top-nav-link {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+  text-decoration: none;
+  padding: 4px 0;
+  border-bottom: 1.5px solid transparent;
+  transition: all .15s;
+}
+.top-nav-link:hover { color: var(--text); }
+.top-nav-link.active { color: var(--text); border-bottom-color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <span class="top-nav-brand">Vỡ lòng Tech</span>
+  <div class="top-nav-divider"></div>
+  <a href="index.html" class="top-nav-link">Tổng quan</a>
+  <a href="page02.html" class="top-nav-link active">Khóa học</a>
+</nav>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-label">Khóa học</div>
+    <div class="brand-title">Thiết Kế<br>Hệ Thống</div>
+  </div>
+
+  <div class="sidebar-search">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Tìm kiếm chủ đề..." autocomplete="off">
+    </div>
+  </div>
+
+  <nav class="sidebar-nav" id="sidebarNav">
+    <!-- injected by JS -->
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <div class="topbar">
+    <button class="mobile-toggle" id="mobileToggle">☰</button>
+    <div class="topbar-breadcrumb" id="topbarBreadcrumb">
+      <span class="topbar-chapter-badge" id="topbarChapter">Tổng quan</span>
+    </div>
+    <div class="topbar-nav">
+      <button class="btn-nav" id="btnPrev" disabled>← Trước</button>
+      <button class="btn-nav primary" id="btnNext">Tiếp →</button>
+    </div>
+  </div>
+
+  <div class="content" id="mainContent">
+    <!-- injected by JS -->
+  </div>
+
+</main>
+</div>
+
+<script>
+const TOPICS = [{"id":"what_is_system_design_","title":"What is system design?","vi_title":"Thiết kế hệ thống là gì?","chapter":"Bắt Đầu","vi_desc":"Thiết kế hệ thống là quá trình xác định kiến trúc, giao diện và dữ liệu cho một hệ thống đáp ứng các yêu cầu cụ thể. Thiết kế hệ thống giúp đáp ứng nhu cầu của tổ chức thông qua các hệ thống mạch lạc và hiệu quả.","subsections":[{"title":"Why is System Design so important?","desc":"System design helps us define a solution that meets the business requirements. It is one of the earliest decisions we can make when building a system."}]},{"id":"ip","title":"IP","vi_title":"Địa chỉ IP","chapter":"Chương I","vi_desc":"Địa chỉ IP là một địa chỉ duy nhất xác định thiết bị trên internet hoặc mạng nội bộ. IP là viết tắt của \"Internet Protocol\" — tập hợp các quy tắc điều chỉnh định dạng dữ liệu được gửi qua internet.","subsections":[{"title":"Versions","desc":"IPv4: giao thức gốc dùng ký hiệu thập phân 32-bit (~4 tỷ địa chỉ). IPv6: giao thức mới 1998, dùng 128-bit (~340 × 10³⁶ địa chỉ)."},{"title":"Types","desc":"Public: địa chỉ chung cho cả mạng. Private: địa chỉ riêng cho từng thiết bị. Static: không thay đổi, tạo thủ công. Dynamic: thay đổi theo thời gian, gán bởi DHCP."}]},{"id":"osi_model","title":"OSI Model","vi_title":"Mô hình OSI","chapter":"Chương I","vi_desc":"Mô hình OSI là mô hình logic định nghĩa giao tiếp mạng được sử dụng bởi các hệ thống mở. Mô hình này chia hệ thống giao tiếp thành 7 tầng trừu tượng, mỗi tầng xếp chồng lên tầng trước.","subsections":[{"title":"Why does the OSI model matter?","desc":"Giúp đơn giản hóa quy trình gỡ lỗi, khuyến khích các nhà sản xuất tạo sản phẩm tương thích và tư duy bảo mật từ nền tảng."},{"title":"Layers (7 tầng)","desc":"Application → Presentation → Session → Transport → Network → Data Link → Physical. Từ trên (dữ liệu người dùng) xuống dưới (tín hiệu vật lý)."}]},{"id":"tcp_and_udp","title":"TCP and UDP","vi_title":"TCP và UDP","chapter":"Chương I","vi_desc":"TCP (Transmission Control Protocol) là giao thức hướng kết nối với cơ chế kiểm tra lỗi tích hợp. UDP (User Datagram Protocol) là giao thức không kết nối, đơn giản hơn, ưu tiên tốc độ hơn độ tin cậy.","subsections":[{"title":"TCP","desc":"Hướng kết nối, đảm bảo giao hàng theo thứ tự. Phù hợp: tải file, trang web, email. Nhược điểm: overhead lớn hơn UDP."},{"title":"UDP","desc":"Không kết nối, không đảm bảo giao hàng. Phù hợp: video streaming, DNS, VoIP. Ưu điểm: độ trễ thấp hơn TCP."},{"title":"TCP vs UDP","desc":"TCP: kết nối, đảm bảo, chậm hơn. UDP: không kết nối, không đảm bảo, nhanh hơn. Chọn UDP khi độ trễ thấp quan trọng hơn độ tin cậy."}]},{"id":"domain_name_system__dns_","title":"Domain Name System (DNS)","vi_title":"Hệ thống tên miền (DNS)","chapter":"Chương I","vi_desc":"DNS là hệ thống đặt tên phân cấp và phân tán dùng để dịch tên miền dễ đọc (như google.com) thành địa chỉ IP mà máy tính sử dụng để giao tiếp với nhau.","subsections":[{"title":"How DNS works","desc":"DNS lookup gồm 8 bước: Browser → DNS Resolver → Root Server → TLD Nameserver → Authoritative DNS → IP address trả về."},{"title":"Server types","desc":"DNS Resolver: máy chủ đệ quy đầu tiên nhận yêu cầu. Root Server: cấp cao nhất. TLD Nameserver: quản lý .com, .org... Authoritative DNS: chứa bản ghi chính thức."},{"title":"Record Types","desc":"A: tên → IPv4. AAAA: tên → IPv6. CNAME: alias. MX: mail server. NS: name server. TXT: văn bản tùy ý."}]},{"id":"load_balancing","title":"Load Balancing","vi_title":"Cân bằng tải","chapter":"Chương I","vi_desc":"Cân bằng tải phân phối lưu lượng mạng đến nhiều tài nguyên, đảm bảo tính sẵn sàng cao và độ tin cậy bằng cách chỉ gửi yêu cầu đến các máy chủ đang trực tuyến.","subsections":[{"title":"Workload distribution","desc":"Round-robin: lần lượt. Sticky session: cùng client → cùng server. IP hash: hash IP client. Least Connections: server ít kết nối nhất."},{"title":"Types","desc":"Software (NGINX, HAProxy): linh hoạt, rẻ. Hardware (F5, Citrix): hiệu suất cao, đắt. DNS: phân phối ở tầng DNS."},{"title":"Routing Algorithms","desc":"Round Robin, Weighted Round Robin, Least Connections, Weighted Least Connections, IP Hash, Random với 2 lựa chọn."}]},{"id":"clustering","title":"Clustering","vi_title":"Phân cụm (Clustering)","chapter":"Chương I","vi_desc":"Phân cụm là nhóm hai hoặc nhiều máy tính chạy song song để đạt được mục tiêu chung. Khi người dùng gửi yêu cầu đến cụm, nó được xử lý bởi bất kỳ máy tính nào trong cụm.","subsections":[{"title":"Configurations","desc":"Active-Active: tất cả node đều hoạt động, phân phối tải. Active-Passive: node dự phòng chờ node chính hỏng mới kích hoạt."},{"title":"Advantages","desc":"Tính sẵn sàng cao, khả năng mở rộng, hiệu suất tốt hơn, tiết kiệm chi phí."},{"title":"Challenges","desc":"Tăng độ phức tạp khi cài đặt và bảo trì. Hệ điều hành, ứng dụng và các dependency phải được cài đặt trên mỗi node."}]},{"id":"caching","title":"Caching","vi_title":"Bộ nhớ đệm (Caching)","chapter":"Chương I","vi_desc":"Bộ nhớ đệm tăng hiệu suất truy xuất dữ liệu bằng cách giảm nhu cầu truy cập lớp lưu trữ chậm hơn bên dưới. Bộ đệm tận dụng nguyên tắc: \"dữ liệu vừa được yêu cầu có khả năng được yêu cầu lại\".","subsections":[{"title":"Cache hit & Cache miss","desc":"Cache hit: dữ liệu tìm thấy trong bộ đệm (hot=L1, warm=L2/L3, cold=thấp hơn). Cache miss: không tìm thấy, phải ghi vào cache."},{"title":"Cache Invalidation","desc":"Write-through: ghi đồng thời cache và DB (nhất quán cao, độ trễ ghi cao). Write-around: ghi thẳng DB (ít cache miss khi ghi ít). Write-back: ghi cache trước, đồng bộ DB sau (nhanh, rủi ro mất dữ liệu)."},{"title":"Eviction policies","desc":"FIFO, LIFO, LRU (Least Recently Used), MRU (Most Recently Used), LFU (Least Frequently Used), Random Replacement."}]},{"id":"content_delivery_network__cdn_","title":"Content Delivery Network (CDN)","vi_title":"Mạng phân phối nội dung (CDN)","chapter":"Chương I","vi_desc":"CDN là nhóm máy chủ phân tán theo địa lý, phối hợp để cung cấp nội dung internet nhanh chóng. Thông thường, các tệp tĩnh như HTML/CSS/JS, ảnh và video được phục vụ từ CDN.","subsections":[{"title":"How does a CDN work?","desc":"Máy chủ gốc lưu nội dung gốc. Edge server phân tán khắp thế giới lưu bản cache. Người dùng nhận nội dung từ edge gần nhất."},{"title":"Types","desc":"Push CDN: nội dung được đẩy lên CDN khi thay đổi — tốt cho trang ít lưu lượng. Pull CDN: cache cập nhật theo yêu cầu — tốt cho trang nhiều lưu lượng."}]},{"id":"proxy","title":"Proxy","vi_title":"Máy chủ Proxy","chapter":"Chương I","vi_desc":"Máy chủ proxy là phần cứng/phần mềm trung gian nằm giữa client và máy chủ backend. Nó nhận yêu cầu từ client và chuyển tiếp đến máy chủ gốc.","subsections":[{"title":"Forward Proxy","desc":"Proxy nằm trước nhóm client, giao tiếp với internet thay mặt client. Ưu điểm: ẩn danh, vượt giới hạn địa lý, kiểm soát truy cập."},{"title":"Reverse Proxy","desc":"Proxy nằm trước máy chủ, tiếp nhận yêu cầu từ internet. Ưu điểm: bảo mật, caching, SSL, cân bằng tải. Khác với Forward Proxy ở hướng bảo vệ."}]},{"id":"availability","title":"Availability","vi_title":"Tính sẵn sàng (Availability)","chapter":"Chương I","vi_desc":"Tính sẵn sàng là thời gian hệ thống duy trì hoạt động để thực hiện chức năng yêu cầu trong một khoảng thời gian cụ thể. Được đo bằng \"số chín\" — ví dụ: 99.9% = ngoại tuyến tối đa 8.7 giờ/năm.","subsections":[{"title":"The Nine's of availability","desc":"99%: 3.65 ngày/năm downtime. 99.9%: 8.7 giờ/năm. 99.99%: 52 phút/năm. 99.999%: 5 phút/năm. Mỗi \"chín\" thêm vào giảm downtime 10 lần."},{"title":"Sequence vs Parallel","desc":"Nối tiếp: tính sẵn sàng tổng = tích các thành phần (A×B). Song song: tính sẵn sàng cao hơn vì chỉ cần ít nhất một thành phần hoạt động."}]},{"id":"scalability","title":"Scalability","vi_title":"Khả năng mở rộng (Scalability)","chapter":"Chương I","vi_desc":"Khả năng mở rộng là thước đo mức độ hệ thống phản hồi với các thay đổi bằng cách thêm hoặc xóa tài nguyên để đáp ứng nhu cầu. Có hai loại: mở rộng dọc (nâng cấp máy) và mở rộng ngang (thêm máy).","subsections":[{"title":"Vertical scaling (Scale up)","desc":"Thêm tài nguyên cho máy hiện tại (RAM, CPU, SSD). Ưu: đơn giản, không thay đổi kiến trúc. Nhược: giới hạn phần cứng, single point of failure, tốn kém."},{"title":"Horizontal scaling (Scale out)","desc":"Thêm nhiều máy vào pool tài nguyên. Ưu: không giới hạn lý thuyết, khả năng chịu lỗi cao. Nhược: phức tạp hơn, cần load balancer, vấn đề dữ liệu phân tán."}]},{"id":"storage","title":"Storage","vi_title":"Lưu trữ (Storage)","chapter":"Chương I","vi_desc":"Lưu trữ là cơ chế cho phép hệ thống lưu giữ dữ liệu tạm thời hoặc vĩnh viễn. Bao gồm RAID, lưu trữ file, block storage, object storage, NAS và HDFS.","subsections":[{"title":"RAID","desc":"Redundant Array of Independent Disks: kỹ thuật lưu trữ kết hợp nhiều ổ đĩa. RAID 0: striping (hiệu suất). RAID 1: mirroring (dự phòng). RAID 5/6: kết hợp."},{"title":"Storage types","desc":"File storage: cấu trúc phân cấp thư mục. Block storage: lưu trữ theo block (hiệu suất cao). Object storage: lưu đối tượng + metadata (S3). NAS: lưu trữ mạng."}]},{"id":"databases_and_dbms","title":"Databases and DBMS","vi_title":"Cơ sở dữ liệu và DBMS","chapter":"Chương II","vi_desc":"Cơ sở dữ liệu là bộ sưu tập thông tin có tổ chức có thể được truy cập, quản lý và cập nhật. DBMS (Database Management System) là phần mềm giúp quản lý cơ sở dữ liệu.","subsections":[{"title":"Components","desc":"Schema: cấu trúc logical. Table: tập hợp hàng và cột. Column: thuộc tính dữ liệu. Row: bản ghi đơn lẻ."},{"title":"Types","desc":"SQL/Relational: dữ liệu có cấu trúc, schema cố định. NoSQL: linh hoạt, phân tán. NewSQL: kết hợp cả hai."}]},{"id":"sql_databases","title":"SQL databases","vi_title":"Cơ sở dữ liệu SQL","chapter":"Chương II","vi_desc":"Cơ sở dữ liệu SQL (quan hệ) là tập hợp các mục dữ liệu có mối quan hệ được xác định trước. Chúng sử dụng bảng để tổ chức dữ liệu và ngôn ngữ SQL để truy vấn.","subsections":[{"title":"Materialized views","desc":"View được lưu trữ vật lý, được tính toán trước và cập nhật định kỳ. Tăng hiệu suất đọc nhưng dữ liệu có thể không cập nhật tức thì."},{"title":"N+1 query problem","desc":"Khi tải N bản ghi rồi thực hiện thêm N query riêng lẻ thay vì 1 query kết hợp. Giải pháp: tối ưu SQL hoặc dùng dataloader."},{"title":"Advantages & Disadvantages","desc":"Ưu: đơn giản, nhất quán dữ liệu, linh hoạt. Nhược: bảo trì tốn kém, khó thay đổi schema, hiệu suất join giảm khi dữ liệu lớn."}]},{"id":"nosql_databases","title":"NoSQL databases","vi_title":"Cơ sở dữ liệu NoSQL","chapter":"Chương II","vi_desc":"NoSQL là danh mục rộng bao gồm mọi cơ sở dữ liệu không sử dụng SQL làm ngôn ngữ truy cập dữ liệu chính. Dữ liệu không cần tuân theo schema định sẵn.","subsections":[{"title":"Document","desc":"Lưu dữ liệu dạng document (JSON/BSON). Linh hoạt, schemaless, mở rộng ngang dễ. VD: MongoDB, CouchDB."},{"title":"Key-value","desc":"Cấu trúc đơn giản nhất: key → value. Hiệu suất cao, phù hợp session management. VD: Redis, DynamoDB."},{"title":"Graph","desc":"Lưu dữ liệu dạng node và cạnh. Truy vấn quan hệ nhanh. Dùng cho mạng xã hội, gợi ý, phát hiện gian lận. VD: Neo4j."},{"title":"Time series","desc":"Tối ưu cho dữ liệu theo thời gian. Phù hợp IoT, giám sát, phân tích tài chính. VD: InfluxDB."},{"title":"Wide column","desc":"Schema-agnostic, lưu theo column families. Phù hợp big data thời gian thực. VD: Cassandra, BigTable."}]},{"id":"sql_vs_nosql_databases","title":"SQL vs NoSQL databases","vi_title":"SQL vs NoSQL","chapter":"Chương II","vi_desc":"SQL lưu dữ liệu trong bảng với schema cố định, trong khi NoSQL có nhiều mô hình lưu trữ linh hoạt hơn. SQL mở rộng dọc, NoSQL mở rộng ngang. Hầu hết SQL tuân thủ ACID.","subsections":[{"title":"When to use SQL","desc":"Dữ liệu có cấu trúc với schema nghiêm ngặt. Cần quan hệ phức tạp và join. Cần transactions và ACID. Lookup theo index nhanh."},{"title":"When to use NoSQL","desc":"Schema động hoặc linh hoạt. Dữ liệu phi quan hệ. Khối lượng dữ liệu rất lớn. Throughput IOPS rất cao."}]},{"id":"database_replication","title":"Database Replication","vi_title":"Sao chép cơ sở dữ liệu","chapter":"Chương II","vi_desc":"Sao chép là quá trình chia sẻ thông tin để đảm bảo tính nhất quán giữa các tài nguyên dự phòng. Bao gồm mô hình Master-Slave và Master-Master.","subsections":[{"title":"Master-Slave Replication","desc":"Master xử lý đọc/ghi, sao chép ghi sang Slave chỉ đọc. Ưu: backup không ảnh hưởng master, đọc phân tán. Nhược: mất dữ liệu khi master hỏng."},{"title":"Master-Master Replication","desc":"Cả hai master đều đọc/ghi và đồng bộ nhau. Ưu: failover tự động, phân tải ghi. Nhược: phức tạp hơn, xung đột ghi."},{"title":"Synchronous vs Asynchronous","desc":"Đồng bộ: ghi vào cả primary và replica cùng lúc (nhất quán cao). Bất đồng bộ: ghi primary trước, replica sau (hiệu suất cao hơn)."}]},{"id":"indexes","title":"Indexes","vi_title":"Chỉ mục (Indexes)","chapter":"Chương II","vi_desc":"Chỉ mục cải thiện tốc độ truy xuất dữ liệu trên kho dữ liệu. Chúng đánh đổi chi phí lưu trữ tăng và ghi chậm hơn để đổi lấy tốc độ đọc nhanh hơn.","subsections":[{"title":"Dense Index","desc":"Tạo bản ghi index cho mỗi hàng trong bảng. Tìm kiếm binary nhanh, không yêu cầu dữ liệu có thứ tự. Tốn bộ nhớ hơn."},{"title":"Sparse Index","desc":"Chỉ tạo bản ghi index cho một số bản ghi. Cần ít bộ nhớ hơn nhưng yêu cầu dữ liệu có thứ tự để hoạt động hiệu quả."}]},{"id":"normalization_and_denormalization","title":"Normalization and Denormalization","vi_title":"Chuẩn hóa và phi chuẩn hóa","chapter":"Chương II","vi_desc":"Chuẩn hóa là kỹ thuật tổ chức dữ liệu trong cơ sở dữ liệu để giảm dư thừa. Phi chuẩn hóa là quá trình ngược lại, kết hợp dữ liệu để cải thiện hiệu suất đọc.","subsections":[{"title":"Normalization","desc":"Chia dữ liệu thành các bảng nhỏ hơn để loại bỏ dư thừa. Các dạng chuẩn: 1NF, 2NF, 3NF, BCNF. Ưu: nhất quán, ít dư thừa. Nhược: cần join nhiều."},{"title":"Denormalization","desc":"Kết hợp dữ liệu để giảm số lần join. Ưu: đọc nhanh hơn, ít join. Nhược: dữ liệu dư thừa, cập nhật phức tạp hơn."}]},{"id":"acid_and_base_consistency_models","title":"ACID and BASE consistency models","vi_title":"Mô hình nhất quán ACID và BASE","chapter":"Chương II","vi_desc":"ACID (Atomicity, Consistency, Isolation, Durability) đảm bảo tính tin cậy của giao dịch. BASE (Basically Available, Soft-state, Eventual consistency) ưu tiên tính sẵn sàng hơn tính nhất quán tức thì.","subsections":[{"title":"ACID","desc":"Atomic: giao dịch thành công hoàn toàn hoặc thất bại hoàn toàn. Consistent: dữ liệu luôn ở trạng thái hợp lệ. Isolated: giao dịch độc lập nhau. Durable: dữ liệu đã commit không bị mất."},{"title":"BASE","desc":"Basically Available: hệ thống đảm bảo tính sẵn sàng. Soft-state: trạng thái có thể thay đổi theo thời gian. Eventual consistency: dữ liệu cuối cùng sẽ nhất quán."}]},{"id":"cap_theorem","title":"CAP Theorem","vi_title":"Định lý CAP","chapter":"Chương II","vi_desc":"Định lý CAP cho biết hệ thống phân tán chỉ có thể cung cấp 2 trong 3 đặc tính: Tính nhất quán (Consistency), Tính sẵn sàng (Availability), và Khả năng chịu phân vùng (Partition tolerance).","subsections":[{"title":"The three properties","desc":"Consistency (C): mọi đọc nhận được ghi gần nhất hoặc lỗi. Availability (A): mọi yêu cầu nhận được phản hồi. Partition tolerance (P): hệ thống tiếp tục hoạt động khi mạng bị phân vùng."},{"title":"Trade-offs","desc":"CA: SQL truyền thống (PostgreSQL). CP: MongoDB, Redis, HBase — ưu tiên nhất quán khi phân vùng. AP: Cassandra, CouchDB — ưu tiên sẵn sàng khi phân vùng."}]},{"id":"pacelc_theorem","title":"PACELC Theorem","vi_title":"Định lý PACELC","chapter":"Chương II","vi_desc":"Định lý PACELC mở rộng CAP. Nếu có phân vùng mạng (P), hệ thống phải chọn giữa A và C. Ngược lại (E = else), hệ thống phải đánh đổi giữa độ trễ (L) và tính nhất quán (C).","subsections":[{"title":"PACELC explained","desc":"P→A/C: giống CAP. E→L/C: ngay cả khi không có phân vùng, vẫn có đánh đổi giữa độ trễ thấp (eventual consistency) và nhất quán cao (đồng bộ chặt chẽ)."}]},{"id":"transactions","title":"Transactions","vi_title":"Giao dịch (Transactions)","chapter":"Chương II","vi_desc":"Giao dịch là chuỗi các thao tác được thực hiện như một đơn vị logic công việc duy nhất. Giao dịch thường liên quan đến nhiều bước nhưng được ghi nhận hoặc hủy bỏ như một thể thống nhất.","subsections":[{"title":"Transaction states","desc":"Active → Partially Committed → Committed (thành công) hoặc Active → Failed → Aborted (rollback) → Terminated."},{"title":"Concurrency control","desc":"Kiểm soát đồng thời đảm bảo tính nhất quán khi nhiều giao dịch chạy song song. Sử dụng locks, timestamps hoặc MVCC."}]},{"id":"distributed_transactions","title":"Distributed Transactions","vi_title":"Giao dịch phân tán","chapter":"Chương II","vi_desc":"Giao dịch phân tán là giao dịch liên quan đến nhiều thành phần mạng. Bao gồm Two-phase commit (2PC), Three-phase commit (3PC) và Sagas.","subsections":[{"title":"Two-phase commit (2PC)","desc":"Giai đoạn 1 (Prepare): coordinator hỏi tất cả participant có sẵn sàng không. Giai đoạn 2 (Commit): nếu tất cả sẵn sàng, commit; nếu không, rollback. Vấn đề: blocking nếu coordinator hỏng."},{"title":"Three-phase commit (3PC)","desc":"Mở rộng 2PC thêm giai đoạn Pre-commit để tránh blocking vô thời hạn. Mỗi giai đoạn có timeout."},{"title":"Sagas","desc":"Chuỗi các giao dịch cục bộ. Nếu một giao dịch thất bại, thực hiện các compensating transaction để hoàn tác. Choreography hoặc Orchestration."}]},{"id":"sharding","title":"Sharding","vi_title":"Phân mảnh dữ liệu (Sharding)","chapter":"Chương II","vi_desc":"Sharding là mẫu kiến trúc cơ sở dữ liệu liên quan đến phân vùng ngang — thực hành tách các hàng của bảng thành nhiều bảng khác nhau gọi là phân vùng hoặc shard.","subsections":[{"title":"Partitioning criteria","desc":"Hash-based: dùng hàm băm xác định shard. List-based: phân vùng theo danh sách giá trị. Range-based: phân vùng theo khoảng giá trị. Composite: kết hợp nhiều phương pháp."},{"title":"Advantages","desc":"Tính sẵn sàng, khả năng mở rộng, bảo mật, hiệu suất truy vấn, quản lý dữ liệu tốt hơn."},{"title":"Disadvantages","desc":"Phức tạp hơn. Join qua shard khó và chậm. Cân bằng lại shard tốn kém khi phân phối không đều."}]},{"id":"consistent_hashing","title":"Consistent Hashing","vi_title":"Hàm băm nhất quán","chapter":"Chương II","vi_desc":"Hàm băm nhất quán là kỹ thuật phân phối hữu ích trong việc mở rộng ngang. Nó giảm thiểu số lần ánh xạ lại key cần thiết khi thêm hoặc xóa máy chủ.","subsections":[{"title":"How it works","desc":"Các máy chủ và key đều được băm lên một vòng tròn. Mỗi key được gán cho máy chủ gần nhất theo chiều kim đồng hồ. Khi thêm/xóa máy chủ, chỉ cần di chuyển một phần nhỏ key."},{"title":"Virtual nodes","desc":"Mỗi máy chủ vật lý ánh xạ thành nhiều điểm trên vòng để phân phối đều hơn và linh hoạt khi thay đổi số lượng máy chủ."}]},{"id":"database_federation","title":"Database Federation","vi_title":"Liên kết cơ sở dữ liệu","chapter":"Chương II","vi_desc":"Liên kết cơ sở dữ liệu (hay còn gọi là phân chia chức năng) tách cơ sở dữ liệu theo chức năng. Mỗi cơ sở dữ liệu có thể sử dụng ngôn ngữ truy vấn và cơ sở hạ tầng khác nhau.","subsections":[{"title":"Advantages","desc":"Phân chia theo chức năng giảm tải cho mỗi DB. Cho phép chọn loại DB phù hợp nhất cho từng trường hợp sử dụng."},{"title":"Disadvantages","desc":"Join qua database phức tạp. Tăng độ phức tạp ứng dụng. Dữ liệu nhất quán khó đảm bảo hơn."}]},{"id":"n_tier_architecture","title":"N-tier architecture","vi_title":"Kiến trúc N tầng","chapter":"Chương III","vi_desc":"Kiến trúc N tầng chia ứng dụng thành các tầng logic và vật lý. Mỗi tầng thực hiện một vai trò cụ thể và giao tiếp với các tầng liền kề.","subsections":[{"title":"Common tiers","desc":"2-tier: client + server. 3-tier: Presentation + Business Logic + Data. N-tier: thêm các tầng như Cache, Queue, CDN..."},{"title":"Advantages","desc":"Dễ bảo trì và mở rộng từng tầng độc lập. Phân tách mối quan tâm rõ ràng. Bảo mật tốt hơn."}]},{"id":"message_brokers","title":"Message Brokers","vi_title":"Bộ môi giới tin nhắn","chapter":"Chương III","vi_desc":"Bộ môi giới tin nhắn là các module phần mềm cho phép giao tiếp và trao đổi dữ liệu trong và giữa các ứng dụng theo cách tin cậy. Chúng cho phép các dịch vụ giao tiếp mà không cần biết vị trí của nhau.","subsections":[{"title":"How it works","desc":"Producer gửi tin nhắn đến broker. Broker lưu trữ và định tuyến. Consumer nhận tin nhắn khi sẵn sàng. Tách biệt hoàn toàn producer và consumer."},{"title":"Examples","desc":"RabbitMQ: phổ biến, hỗ trợ nhiều giao thức. Apache Kafka: throughput cao, phát lại tin nhắn. Amazon SQS: dịch vụ quản lý."}]},{"id":"message_queues","title":"Message Queues","vi_title":"Hàng đợi tin nhắn","chapter":"Chương III","vi_desc":"Hàng đợi tin nhắn là một hình thức giao tiếp không đồng bộ giữa các dịch vụ. Tin nhắn được lưu trữ trong hàng đợi cho đến khi được xử lý và xóa.","subsections":[{"title":"Advantages","desc":"Tách biệt dịch vụ. Xử lý không đồng bộ. Hấp thụ lưu lượng đột biến. Tin nhắn được lưu trữ bền vững."},{"title":"Use cases","desc":"Xử lý email, tác vụ nền, thông báo push, xử lý ảnh/video, giao tiếp microservices."}]},{"id":"publish_subscribe","title":"Publish-Subscribe","vi_title":"Mô hình Publish-Subscribe","chapter":"Chương III","vi_desc":"Mô hình Pub/Sub là mô hình nhắn tin trong đó các publisher phân loại tin nhắn thành các topic. Subscriber đăng ký nhận tin nhắn từ các topic cụ thể.","subsections":[{"title":"Compared to Message Queue","desc":"Queue: điểm-điểm, một consumer xử lý mỗi tin nhắn. Pub/Sub: broadcast, nhiều subscriber nhận cùng một tin nhắn."},{"title":"Use cases","desc":"Thông báo sự kiện, cập nhật dữ liệu thời gian thực, hệ thống phân tán loose-coupling."}]},{"id":"enterprise_service_bus__esb_","title":"Enterprise Service Bus (ESB)","vi_title":"Bus dịch vụ doanh nghiệp (ESB)","chapter":"Chương III","vi_desc":"ESB là kiến trúc middleware cho phép giao tiếp giữa các ứng dụng trong môi trường doanh nghiệp. Nó hoạt động như lớp giao tiếp trung gian giữa các dịch vụ.","subsections":[{"title":"Advantages","desc":"Cải thiện khả năng tương tác. Hỗ trợ nhiều giao thức. Giám sát tập trung. Bảo mật nhất quán."},{"title":"Disadvantages","desc":"Có thể trở thành bottleneck. Phức tạp khi cấu hình. Quản lý tập trung là single point of failure."}]},{"id":"monoliths_and_microservices","title":"Monoliths and Microservices","vi_title":"Monolith và Microservices","chapter":"Chương III","vi_desc":"Monolith là ứng dụng đơn lẻ, nguyên khối nơi tất cả chức năng được tập hợp lại. Microservices là cách tiếp cận tách ứng dụng thành các dịch vụ nhỏ, độc lập.","subsections":[{"title":"Monoliths","desc":"Ưu: đơn giản phát triển ban đầu, dễ debug, deploy đơn giản. Nhược: khó mở rộng từng phần, một lỗi có thể hạ toàn hệ thống."},{"title":"Microservices","desc":"Ưu: mở rộng độc lập, công nghệ đa dạng, fault isolation. Nhược: phức tạp hơn nhiều, latency mạng, quản lý dữ liệu phân tán."}]},{"id":"event_driven_architecture__eda_","title":"Event-Driven Architecture (EDA)","vi_title":"Kiến trúc hướng sự kiện (EDA)","chapter":"Chương III","vi_desc":"EDA là mô hình phần mềm trong đó các thành phần thực hiện hành động để phản hồi với các sự kiện đến. Nó cho phép các hệ thống phân tán có thể thể hiện các hành vi không đồng bộ.","subsections":[{"title":"Components","desc":"Event producers: tạo ra sự kiện. Event routers: lọc và định tuyến sự kiện đến consumer phù hợp. Event consumers: xử lý sự kiện."},{"title":"Advantages","desc":"Loose coupling, khả năng mở rộng, tính linh hoạt, hỗ trợ xử lý bất đồng bộ tự nhiên."}]},{"id":"event_sourcing","title":"Event Sourcing","vi_title":"Event Sourcing","chapter":"Chương III","vi_desc":"Event Sourcing là mẫu thiết kế lưu trữ mọi thay đổi trạng thái của hệ thống như một chuỗi sự kiện. Thay vì chỉ lưu trạng thái hiện tại, mọi thay đổi đều được ghi lại.","subsections":[{"title":"How it works","desc":"Thay vì UPDATE dữ liệu, chỉ thêm sự kiện mới vào log. Trạng thái hiện tại = phát lại toàn bộ lịch sử sự kiện. Cung cấp audit trail đầy đủ."},{"title":"Advantages","desc":"Audit log đầy đủ, khả năng phát lại lịch sử, debug dễ hơn, hỗ trợ CQRS tự nhiên."}]},{"id":"command_and_query_responsibility_segregation__cqrs_","title":"Command and Query Responsibility Segregation (CQRS)","vi_title":"CQRS","chapter":"Chương III","vi_desc":"CQRS là mẫu thiết kế tách biệt hoạt động đọc (query) và ghi (command) của một kho dữ liệu. Điều này cho phép mở rộng, tối ưu hóa và bảo mật riêng biệt cho mỗi loại hoạt động.","subsections":[{"title":"How it works","desc":"Command side: xử lý ghi, tạo sự kiện. Query side: đọc từ read model được tối ưu riêng. Hai model có thể dùng database khác nhau."},{"title":"When to use","desc":"Khi đọc và ghi có tải không cân bằng. Khi cần tối ưu hóa query phức tạp. Thường kết hợp với Event Sourcing."}]},{"id":"api_gateway","title":"API Gateway","vi_title":"Cổng API (API Gateway)","chapter":"Chương III","vi_desc":"API Gateway là máy chủ đóng vai trò là điểm vào cho tất cả các client. Nó xử lý yêu cầu bằng cách định tuyến đến dịch vụ thích hợp, tổng hợp kết quả và áp dụng các chính sách.","subsections":[{"title":"Features","desc":"Authentication & Authorization. Rate limiting. Caching. Request/Response transformation. Load balancing. Logging & Monitoring."},{"title":"Examples","desc":"Amazon API Gateway, Kong, NGINX, Azure API Management, Apigee."}]},{"id":"rest__graphql__grpc","title":"REST, GraphQL, gRPC","vi_title":"REST, GraphQL, gRPC","chapter":"Chương III","vi_desc":"Ba phong cách kiến trúc phổ biến cho API: REST sử dụng HTTP thuần túy, GraphQL cho phép client yêu cầu chính xác dữ liệu cần thiết, gRPC sử dụng Protocol Buffers cho giao tiếp hiệu suất cao.","subsections":[{"title":"REST","desc":"Stateless, sử dụng HTTP verbs (GET/POST/PUT/DELETE). Dễ hiểu, cache tốt. Over-fetching/under-fetching là nhược điểm."},{"title":"GraphQL","desc":"Client yêu cầu chính xác trường cần thiết. Một endpoint duy nhất. Phù hợp khi client đa dạng. Phức tạp hơn REST."},{"title":"gRPC","desc":"Binary protocol, Protocol Buffers. Hiệu suất cao hơn REST. Phù hợp giao tiếp service-to-service. Yêu cầu HTTP/2."}]},{"id":"long_polling__websockets__server_sent_events__sse_","title":"Long polling, WebSockets, Server-Sent Events (SSE)","vi_title":"Long polling, WebSockets, SSE","chapter":"Chương III","vi_desc":"Ba kỹ thuật để hỗ trợ truyền dữ liệu thời gian thực: Long polling giữ kết nối mở, WebSockets cho phép giao tiếp hai chiều, SSE cho phép máy chủ đẩy dữ liệu đến client.","subsections":[{"title":"Long polling","desc":"Client gửi request, server giữ kết nối mở cho đến khi có dữ liệu mới. Đơn giản nhưng tốn tài nguyên server."},{"title":"WebSockets","desc":"Kết nối hai chiều liên tục qua một TCP connection. Lý tưởng cho chat, game thời gian thực, trading dashboard."},{"title":"Server-Sent Events (SSE)","desc":"Máy chủ đẩy dữ liệu đến client qua HTTP một chiều. Đơn giản hơn WebSocket, phù hợp khi chỉ cần server → client."}]},{"id":"geohashing_and_quadtrees","title":"Geohashing and Quadtrees","vi_title":"Geohashing và Quadtrees","chapter":"Chương IV","vi_desc":"Geohashing mã hóa vị trí địa lý thành chuỗi ký tự. Quadtree là cấu trúc dữ liệu cây trong đó mỗi nút có 4 con, thường dùng để phân vùng không gian hai chiều.","subsections":[{"title":"Geohashing","desc":"Chia Trái Đất thành các ô lưới phân cấp. Mỗi ô được mã hóa bằng chuỗi base-32. Chuỗi dài hơn = chính xác hơn. Tiền tố chung = vùng lân cận."},{"title":"Quadtrees","desc":"Mỗi nút có 4 con, chia không gian thành 4 phần. Tìm kiếm điểm trong phạm vi 2D hiệu quả. Ứng dụng: hệ thống bản đồ, gọi xe."}]},{"id":"circuit_breaker","title":"Circuit breaker","vi_title":"Cầu dao mạch (Circuit Breaker)","chapter":"Chương IV","vi_desc":"Cầu dao mạch là mẫu thiết kế dùng để phát hiện sự cố và ngăn ứng dụng liên tục thử thực hiện các thao tác có thể thất bại. Nó giúp ngăn ngừa hiệu ứng thác đổ.","subsections":[{"title":"States","desc":"Closed (đóng): hoạt động bình thường. Open (mở): ngừng yêu cầu đến service lỗi. Half-open (nửa mở): thử lại một số yêu cầu để kiểm tra recovery."},{"title":"Why it matters","desc":"Ngăn cascading failures. Cho service thời gian phục hồi. Cung cấp fallback response ngay lập tức thay vì chờ timeout."}]},{"id":"rate_limiting","title":"Rate Limiting","vi_title":"Giới hạn tốc độ (Rate Limiting)","chapter":"Chương IV","vi_desc":"Giới hạn tốc độ là kỹ thuật kiểm soát tốc độ tạo hoặc xử lý yêu cầu. Nó được sử dụng để bảo vệ tài nguyên backend khỏi bị quá tải và ngăn chặn tấn công DDoS.","subsections":[{"title":"Algorithms","desc":"Token Bucket: yêu cầu lấy token từ bucket được nạp định kỳ. Leaky Bucket: hàng đợi xử lý ở tốc độ cố định. Fixed Window: đếm trong cửa sổ thời gian cố định. Sliding Window: cửa sổ trượt linh hoạt hơn."},{"title":"Use cases","desc":"Bảo vệ API khỏi lạm dụng. Giới hạn người dùng miễn phí. Ngăn DDoS. Đảm bảo chất lượng dịch vụ công bằng."}]},{"id":"service_discovery","title":"Service Discovery","vi_title":"Khám phá dịch vụ (Service Discovery)","chapter":"Chương IV","vi_desc":"Khám phá dịch vụ cho phép các dịch vụ tìm thấy và giao tiếp với nhau mà không cần cấu hình thủ công. Trong microservices, các instance có thể thay đổi động.","subsections":[{"title":"Client-side discovery","desc":"Client trực tiếp query service registry để tìm vị trí service. Client tự thực hiện load balancing."},{"title":"Server-side discovery","desc":"Client gửi request qua load balancer/router. Router query registry và chuyển tiếp. Đơn giản hơn cho client."},{"title":"Examples","desc":"Consul, etcd, Apache Zookeeper, Kubernetes DNS."}]},{"id":"sla__slo__sli","title":"SLA, SLO, SLI","vi_title":"SLA, SLO, SLI","chapter":"Chương IV","vi_desc":"SLA (Service Level Agreement) là thỏa thuận giữa nhà cung cấp và khách hàng về chất lượng dịch vụ. SLO là mục tiêu cụ thể trong SLA. SLI là chỉ số đo lường mức độ dịch vụ.","subsections":[{"title":"SLA","desc":"Hợp đồng pháp lý xác định mức dịch vụ cam kết với khách hàng. Vi phạm có hậu quả (hoàn tiền, phạt hợp đồng)."},{"title":"SLO","desc":"Mục tiêu cụ thể bên trong SLA. Ví dụ: 99.9% uptime, p99 latency < 200ms. Thường nghiêm ngặt hơn SLA."},{"title":"SLI","desc":"Chỉ số đo lường thực tế hiệu suất dịch vụ. Ví dụ: tỷ lệ yêu cầu thành công, thời gian phản hồi trung bình."}]},{"id":"disaster_recovery","title":"Disaster recovery","vi_title":"Khôi phục thảm họa","chapter":"Chương IV","vi_desc":"Khôi phục thảm họa là tập hợp các chính sách và quy trình để cho phép khôi phục hạ tầng IT và hệ thống sau thảm họa tự nhiên hoặc do con người gây ra.","subsections":[{"title":"Key metrics","desc":"RTO (Recovery Time Objective): thời gian tối đa chấp nhận được để phục hồi. RPO (Recovery Point Objective): lượng dữ liệu mất tối đa chấp nhận được."},{"title":"Strategies","desc":"Backup and restore: đơn giản, RTO cao. Pilot light: hệ thống tối thiểu luôn chạy. Warm standby: phiên bản nhỏ hơn luôn sẵn sàng. Multi-site: toàn bộ hệ thống chạy song song."}]},{"id":"virtual_machines__vms__and_containers","title":"Virtual Machines (VMs) and Containers","vi_title":"Máy ảo và Container","chapter":"Chương IV","vi_desc":"Máy ảo (VM) giả lập phần cứng máy tính. Container đóng gói mã và các phụ thuộc của nó cùng nhau. Container nhẹ hơn và khởi động nhanh hơn VM.","subsections":[{"title":"Virtual Machines","desc":"Giả lập phần cứng đầy đủ, bao gồm OS riêng. Cách ly mạnh mẽ. Tốn nhiều tài nguyên hơn. Khởi động chậm hơn (phút)."},{"title":"Containers","desc":"Chia sẻ OS kernel của host. Nhẹ hơn, khởi động nhanh (giây). Cách ly ở cấp process. Docker là công cụ phổ biến nhất."}]},{"id":"oauth_2_0_and_openid_connect__oidc_","title":"OAuth 2.0 and OpenID Connect (OIDC)","vi_title":"OAuth 2.0 và OpenID Connect","chapter":"Chương IV","vi_desc":"OAuth 2.0 là framework ủy quyền cho phép ứng dụng bên thứ ba truy cập dữ liệu người dùng hạn chế. OIDC là lớp nhận dạng xây dựng trên OAuth 2.0.","subsections":[{"title":"OAuth 2.0","desc":"Ủy quyền (Authorization): cấp quyền truy cập hạn chế cho ứng dụng bên thứ ba. Các grant types: Authorization Code, Client Credentials, Device Code..."},{"title":"OpenID Connect (OIDC)","desc":"Xác thực (Authentication): xác định ai đang đăng nhập. Trả về ID Token (JWT) chứa thông tin người dùng. Xây dựng trên OAuth 2.0."}]},{"id":"single_sign_on__sso_","title":"Single Sign-On (SSO)","vi_title":"Đăng nhập một lần (SSO)","chapter":"Chương IV","vi_desc":"SSO là cơ chế xác thực cho phép người dùng đăng nhập một lần và truy cập nhiều ứng dụng. Sau khi đăng nhập, người dùng không cần nhập thông tin xác thực lại.","subsections":[{"title":"How SSO works","desc":"Người dùng đăng nhập với Identity Provider (IdP). IdP cấp token. Ứng dụng xác minh token với IdP. Phiên làm việc chia sẻ giữa các ứng dụng."},{"title":"Advantages","desc":"Trải nghiệm người dùng tốt hơn. Quản lý mật khẩu tập trung. Giảm fatigue mật khẩu. Dễ thu hồi quyền truy cập."}]},{"id":"ssl__tls__mtls","title":"SSL, TLS, mTLS","vi_title":"SSL, TLS, mTLS","chapter":"Chương IV","vi_desc":"SSL (Secure Sockets Layer) và TLS (Transport Layer Security) là các giao thức mã hóa để giao tiếp an toàn. mTLS (mutual TLS) yêu cầu cả hai phía xác thực lẫn nhau.","subsections":[{"title":"SSL/TLS","desc":"TLS là phiên bản nâng cấp của SSL. Cung cấp mã hóa, xác thực và tính toàn vẹn dữ liệu. HTTPS = HTTP + TLS."},{"title":"mTLS","desc":"Xác thực hai chiều: cả client và server đều phải xuất trình certificate. Phổ biến trong microservices và Zero Trust networking."}]},{"id":"system_design_interviews","title":"System Design Interviews","vi_title":"Phỏng vấn thiết kế hệ thống","chapter":"Chương V","vi_desc":"Phỏng vấn thiết kế hệ thống đánh giá khả năng thiết kế hệ thống quy mô lớn. Đây là một phần quan trọng trong quy trình tuyển dụng kỹ sư phần mềm cấp cao.","subsections":[{"title":"Framework","desc":"1. Làm rõ yêu cầu. 2. Ước tính quy mô. 3. Thiết kế mức cao. 4. Đi sâu vào chi tiết. 5. Xác định và giải quyết bottleneck."},{"title":"Tips","desc":"Đừng vội giả định — hỏi trước. Bắt đầu từ tổng quan rồi mới chi tiết. Giải thích đánh đổi của mỗi quyết định. Chủ động đề xuất cải tiến."}]},{"id":"url_shortener","title":"URL Shortener","vi_title":"Case: Rút ngắn URL","chapter":"Chương V","vi_desc":"Thiết kế hệ thống rút ngắn URL như bit.ly. Bao gồm yêu cầu hệ thống, ước tính quy mô, thiết kế dữ liệu, API, thiết kế mức cao và chi tiết.","subsections":[{"title":"Requirements","desc":"Functional: tạo URL ngắn, chuyển hướng URL ngắn → gốc, tùy chọn URL tùy chỉnh, hết hạn. Non-functional: độ trễ thấp, sẵn sàng cao, không đoán được URL."},{"title":"Key Design Decisions","desc":"Encoding: Base62 hoặc MD5. Key Generation Service (KGS): tạo key trước và lưu trữ. Caching: LRU cho URL phổ biến. Horizontal sharding."}]},{"id":"whatsapp","title":"WhatsApp","vi_title":"Case: WhatsApp","chapter":"Chương V","vi_desc":"Thiết kế hệ thống nhắn tin tức thì như WhatsApp hỗ trợ hàng tỷ người dùng. Bao gồm nhắn tin thời gian thực, trạng thái online, thông báo và phân vùng dữ liệu.","subsections":[{"title":"Core challenges","desc":"Nhắn tin thời gian thực: WebSocket giữa client và chat server. Lưu trữ: Cassandra cho messages (write-heavy, time-series). Media: object storage + CDN."},{"title":"Special features","desc":"Last seen: cập nhật định kỳ thay vì mỗi message. Read receipts: một dấu check = gửi, hai = nhận, xanh = đọc. Push notifications qua FCM/APNS."}]},{"id":"twitter","title":"Twitter","vi_title":"Case: Twitter","chapter":"Chương V","vi_desc":"Thiết kế hệ thống mạng xã hội như Twitter. Bao gồm newsfeed, retweet, tìm kiếm, thuật toán xếp hạng và khả năng mở rộng cho hàng triệu người dùng.","subsections":[{"title":"Newsfeed","desc":"Fan-out on write (push): ghi tweet vào newsfeed của tất cả follower ngay lập tức — nhanh đọc, chậm ghi. Fan-out on read (pull): đọc từ timeline của người đang follow — chậm đọc, nhanh ghi."},{"title":"Search & Analytics","desc":"Elasticsearch cho tìm kiếm full-text. Apache Spark cho analytics quy mô lớn. Trending topics: đếm và cập nhật định kỳ."}]},{"id":"netflix","title":"Netflix","vi_title":"Case: Netflix","chapter":"Chương V","vi_desc":"Thiết kế hệ thống phát trực tiếp video như Netflix. Bao gồm xử lý video, phát trực tuyến, tìm kiếm, CDN và hệ thống gợi ý nội dung.","subsections":[{"title":"Video processing","desc":"Upload → transcoding sang nhiều định dạng và độ phân giải → lưu object storage. Adaptive bitrate streaming (HLS/MPEG-DASH) điều chỉnh chất lượng theo băng thông."},{"title":"Content delivery","desc":"CDN phân tán nội dung đến edge location gần người xem nhất. Netflix Open Connect: CDN riêng đặt tại ISP."}]},{"id":"uber","title":"Uber","vi_title":"Case: Uber","chapter":"Chương V","vi_desc":"Thiết kế hệ thống gọi xe như Uber. Bao gồm theo dõi vị trí thời gian thực, khớp tài xế-hành khách, định giá linh động và xử lý điều kiện race condition.","subsections":[{"title":"Location tracking","desc":"Tài xế gửi vị trí mỗi 4 giây qua WebSocket/HTTP. Lưu vào Redis + DB. Quadtree để tìm tài xế gần nhất."},{"title":"Ride matching","desc":"Tìm tài xế trong Quadtree. Xếp hạng theo rating, khoảng cách. Mutex để tránh race condition khi nhiều hành khách gọi cùng lúc. Surge pricing khi nhu cầu cao."}]}];
+
+const CHAPTERS = ['Bắt Đầu','Chương I','Chương II','Chương III','Chương IV','Chương V'];
+const CH_FULL = {
+  'Bắt Đầu': 'Bắt Đầu — Giới thiệu',
+  'Chương I': 'Chương I — Nền tảng mạng & hệ thống',
+  'Chương II': 'Chương II — Cơ sở dữ liệu',
+  'Chương III': 'Chương III — Kiến trúc phần mềm',
+  'Chương IV': 'Chương IV — Kỹ thuật nâng cao',
+  'Chương V': 'Chương V — Case Studies thực tế',
+};
+
+let currentIndex = -1; // -1 = home
+let searchQuery = '';
+
+const sidebar = document.getElementById('sidebar');
+const sidebarNav = document.getElementById('sidebarNav');
+const mainContent = document.getElementById('mainContent');
+const topbarBreadcrumb = document.getElementById('topbarBreadcrumb');
+const topbarChapter = document.getElementById('topbarChapter');
+const progressFill = document.getElementById('progressFill');
+const btnPrev = document.getElementById('btnPrev');
+const btnNext = document.getElementById('btnNext');
+const searchInput = document.getElementById('searchInput');
+const mobileToggle = document.getElementById('mobileToggle');
+
+// Build sidebar
+function buildSidebar() {
+  let html = '';
+  CHAPTERS.forEach((ch, ci) => {
+    const items = TOPICS.filter(t => t.chapter === ch);
+    const isStart = ch === 'Bắt Đầu';
+    html += `<div class="chapter-group">
+      <div class="chapter-label" data-ch="${ch}" onclick="toggleChapter(this)">
+        <span class="chapter-dot" data-ch="${ch}" style="${chDotStyle(ch)}"></span>
+        <span>${CH_FULL[ch]}</span>
+        <span class="chapter-arrow">▾</span>
+      </div>
+      <div class="chapter-items" id="ch-${ci}">`;
+    items.forEach(t => {
+      const idx = TOPICS.indexOf(t);
+      html += `<div class="nav-item" id="nav-${idx}" onclick="goTo(${idx})">
+        <span class="nav-item-num">${String(idx+1).padStart(2,'0')}</span>
+        <span>${t.vi_title}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  sidebarNav.innerHTML = html;
+}
+
+function chDotStyle(ch) {
+  const map = {
+    'Bắt Đầu':'background:#455a64',
+    'Chương I':'background:#1565c0',
+    'Chương II':'background:#7b1fa2',
+    'Chương III':'background:#e65100',
+    'Chương IV':'background:#00695c',
+    'Chương V':'background:#c62828',
+  };
+  return map[ch]||'';
+}
+
+function toggleChapter(el) {
+  el.classList.toggle('collapsed');
+  const ci = el.getAttribute('data-ch');
+  const idx = CHAPTERS.indexOf(ci);
+  const panel = document.getElementById(`ch-${idx}`);
+  if (el.classList.contains('collapsed')) {
+    panel.style.maxHeight = '0';
+    panel.style.overflow = 'hidden';
+  } else {
+    panel.style.maxHeight = panel.scrollHeight + 'px';
+    panel.style.overflow = '';
+    setTimeout(()=>panel.style.maxHeight='',300);
+  }
+}
+
+function updateProgress() {
+  if (currentIndex < 0) {
+    progressFill.style.width = '0%';
+    return;
+  }
+  progressFill.style.width = ((currentIndex+1)/TOPICS.length*100) + '%';
+}
+
+function updateNav() {
+  btnPrev.disabled = currentIndex <= 0;
+  btnNext.disabled = currentIndex >= TOPICS.length - 1;
+  if (currentIndex < 0) btnPrev.disabled = true;
+}
+
+function updateTopbar() {
+  if (currentIndex < 0) {
+    topbarChapter.textContent = 'Tổng quan';
+    topbarChapter.removeAttribute('data-ch');
+    topbarBreadcrumb.innerHTML = '<span class="topbar-chapter-badge">Tổng quan</span>';
+  } else {
+    const t = TOPICS[currentIndex];
+    topbarChapter.textContent = t.chapter;
+    topbarChapter.setAttribute('data-ch', t.chapter);
+    topbarBreadcrumb.innerHTML = `<span class="topbar-chapter-badge" data-ch="${t.chapter}">${t.chapter}</span><span class="topbar-sep">›</span><span class="topbar-topic">${t.vi_title}</span>`;
+  }
+}
+
+function setActiveNav() {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  if (currentIndex >= 0) {
+    const el = document.getElementById(`nav-${currentIndex}`);
+    if (el) {
+      el.classList.add('active');
+      el.scrollIntoView({block:'nearest',behavior:'smooth'});
+    }
+  }
+}
+
+function renderHome() {
+  let html = `
+    <div class="hero">
+      <div class="hero-badge">Khóa học tương tác</div>
+      <div class="hero-title">Thiết Kế<br>Hệ Thống</div>
+      <div class="hero-sub">Từ nền tảng mạng đến kiến trúc microservices và case studies thực tế của các hệ thống tỷ người dùng.</div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-num">56</div><div class="stat-label">chủ đề</div></div>
+        <div class="stat"><div class="stat-num">5</div><div class="stat-label">chương</div></div>
+        <div class="stat"><div class="stat-num">5</div><div class="stat-label">case studies</div></div>
+      </div>
+    </div>`;
+
+  CHAPTERS.forEach(ch => {
+    const items = TOPICS.filter(t => t.chapter === ch);
+    html += `<div class="chapter-section">
+      <div class="ch-header">
+        <div class="ch-dot" data-ch="${ch}" style="${chDotStyle(ch)}"></div>
+        <div class="ch-title">${CH_FULL[ch]}</div>
+        <div class="ch-count">${items.length} chủ đề</div>
+      </div>
+      <div class="overview-grid">`;
+    items.forEach(t => {
+      const idx = TOPICS.indexOf(t);
+      html += `<div class="overview-card" data-ch="${t.chapter}" onclick="goTo(${idx})">
+        <div class="ov-chapter-tag">${t.chapter}</div>
+        <div class="ov-num">${String(idx+1).padStart(2,'0')}</div>
+        <div class="ov-title">${t.vi_title}</div>
+        <div class="ov-desc">${t.vi_desc}</div>
+        <div class="ov-arrow">Đọc →</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  html += `<div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border);font-size:12px;color:var(--text-3);">
+    Nguồn gốc: <a href="https://github.com/karanpratapsingh/system-design" target="_blank" style="color:var(--text-2)">karanpratapsingh/system-design</a> — Dịch tiếng Việt khách quan, không thêm quan điểm cá nhân.
+  </div>`;
+
+  mainContent.innerHTML = html;
+  mainContent.scrollTop = 0;
+  window.scrollTo(0,0);
+}
+
+function renderTopic(idx) {
+  const t = TOPICS[idx];
+  const subs = t.subsections || [];
+
+  let subsHtml = '';
+  if (subs.length) {
+    subsHtml = '<div class="subsections">';
+    subs.forEach((s, i) => {
+      subsHtml += `<div class="subsection-card" id="sub-${idx}-${i}">
+        <div class="subsection-head" onclick="toggleSub('sub-${idx}-${i}')">
+          <div class="subsection-icon" data-ch="${t.chapter}">${String.fromCharCode(65+i)}</div>
+          <div class="subsection-title">${s.title}</div>
+          <div class="subsection-toggle">▾</div>
+        </div>
+        <div class="subsection-body">${s.desc || '—'}</div>
+      </div>`;
+    });
+    subsHtml += '</div>';
+  }
+
+  const prevT = idx > 0 ? TOPICS[idx-1] : null;
+  const nextT = idx < TOPICS.length-1 ? TOPICS[idx+1] : null;
+
+  const html = `
+    <div class="topic-header">
+      <div class="topic-chapter-tag" data-ch="${t.chapter}">${t.chapter}</div>
+      <div class="topic-title">${t.vi_title}</div>
+      <div class="topic-title-en">${t.title}</div>
+    </div>
+    <div class="topic-desc">${t.vi_desc}</div>
+    ${subsHtml}
+    <a class="original-link" href="https://github.com/karanpratapsingh/system-design#${t.title.toLowerCase().replace(/[^a-z0-9]+/g,'-')}" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Xem tài liệu gốc (tiếng Anh)
+    </a>
+    <div class="content-footer">
+      <div>
+        ${prevT ? `<div style="cursor:pointer;font-size:13px;color:var(--text-2)" onclick="goTo(${idx-1})">← ${prevT.vi_title}</div>` : ''}
+      </div>
+      <div>
+        ${nextT ? `<div style="cursor:pointer;font-size:13px;color:var(--text-2);text-align:right" onclick="goTo(${idx+1})">${nextT.vi_title} →</div>` : ''}
+      </div>
+    </div>
+    <div class="footer-source">
+      Nguồn: <a href="https://github.com/karanpratapsingh/system-design" target="_blank">karanpratapsingh/system-design</a>
+    </div>`;
+
+  mainContent.innerHTML = html;
+  mainContent.scrollTop = 0;
+  window.scrollTo(0,0);
+}
+
+function toggleSub(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function renderSearch(q) {
+  const lower = q.toLowerCase();
+  const results = TOPICS.filter(t =>
+    t.vi_title.toLowerCase().includes(lower) ||
+    t.title.toLowerCase().includes(lower) ||
+    t.vi_desc.toLowerCase().includes(lower) ||
+    (t.subsections||[]).some(s => s.title.toLowerCase().includes(lower))
+  );
+
+  function hl(str) {
+    const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+    return str.replace(re, '<mark>$1</mark>');
+  }
+
+  let html = `<div class="search-results">
+    <div class="search-results-title">Kết quả cho "${q}" — ${results.length} chủ đề</div>`;
+
+  if (!results.length) {
+    html += `<div class="search-empty">Không tìm thấy chủ đề phù hợp.<br>Thử từ khóa khác như "cache", "database", "TCP"...</div>`;
+  } else {
+    html += `<div class="overview-grid">`;
+    results.forEach(t => {
+      const idx = TOPICS.indexOf(t);
+      html += `<div class="overview-card" data-ch="${t.chapter}" onclick="goTo(${idx})">
+        <div class="ov-chapter-tag">${t.chapter}</div>
+        <div class="ov-num">${String(idx+1).padStart(2,'0')}</div>
+        <div class="ov-title">${hl(t.vi_title)}</div>
+        <div class="ov-desc">${hl(t.vi_desc.substring(0,120))}...</div>
+        <div class="ov-arrow">Đọc →</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  html += `</div>`;
+  mainContent.innerHTML = html;
+  window.scrollTo(0,0);
+}
+
+function goTo(idx) {
+  searchInput.value = '';
+  searchQuery = '';
+  currentIndex = idx;
+  renderTopic(idx);
+  setActiveNav();
+  updateTopbar();
+  updateNav();
+  updateProgress();
+  if (window.innerWidth <= 900) sidebar.classList.remove('open');
+}
+
+function goHome() {
+  currentIndex = -1;
+  searchQuery = '';
+  searchInput.value = '';
+  renderHome();
+  setActiveNav();
+  updateTopbar();
+  updateNav();
+  updateProgress();
+}
+
+// Events
+btnPrev.onclick = () => { if (currentIndex > 0) goTo(currentIndex-1); };
+btnNext.onclick = () => { if (currentIndex < TOPICS.length-1) goTo(currentIndex+1); else if(currentIndex < 0) goTo(0); };
+
+searchInput.addEventListener('input', e => {
+  searchQuery = e.target.value.trim();
+  if (searchQuery.length >= 2) {
+    currentIndex = -1;
+    renderSearch(searchQuery);
+    setActiveNav();
+    updateTopbar();
+    updateNav();
+  } else if (!searchQuery) {
+    goHome();
+  }
+});
+
+mobileToggle.onclick = () => sidebar.classList.toggle('open');
+document.addEventListener('click', e => {
+  if (window.innerWidth <= 900 && !sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
+    sidebar.classList.remove('open');
+  }
+});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.target === searchInput) return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    if (currentIndex < TOPICS.length-1) goTo(currentIndex < 0 ? 0 : currentIndex+1);
+  }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    if (currentIndex > 0) goTo(currentIndex-1);
+    else if (currentIndex === 0) goHome();
+  }
+  if (e.key === '/') { e.preventDefault(); searchInput.focus(); }
+  if (e.key === 'Escape') { searchInput.blur(); goHome(); }
+});
+
+// Init
+buildSidebar();
+renderHome();
+updateTopbar();
+updateNav();
+updateProgress();
+</script>
+</body>
+</html>
